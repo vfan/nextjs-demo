@@ -89,7 +89,7 @@
 <!-- ==================== 1 ==================== -->
 <h2>1. 静态元数据：导出一个对象</h2>
 
-<p>在 <code>page.tsx</code> 或 <code>layout.tsx</code> 里导出一个叫{" "}
+<p>在 <code>page.tsx</code> 或 <code>layout.tsx</code> 里导出一个叫
 <code>metadata</code> 的常量：</p>
 
 <div class="code-block">
@@ -110,7 +110,7 @@
 </pre>
 </div>
 
-<p>Next.js 会把它渲染成 HTML 里的 <code>&lt;title&gt;</code> 和一堆{" "}
+<p>Next.js 会把它渲染成 HTML 里的 <code>&lt;title&gt;</code> 和一堆
 <code>&lt;meta&gt;</code> 标签。你不需要自己写 <code>&lt;head&gt;</code>。</p>
 
 <h3>常用字段</h3>
@@ -177,7 +177,7 @@
 <div class="callout danger">
   <strong><code>metadata</code> 只能从服务端组件里导出。</strong>
   <br /><br />
-  如果你在 <code>&quot;use client&quot;</code> 文件里写{" "}
+  如果你在 <code>&quot;use client&quot;</code> 文件里写
   <code>export const metadata</code>，构建会直接报错。
   <br /><br />
   为什么？因为元数据要写进 HTML 的 <code>&lt;head&gt;</code>，
@@ -336,7 +336,7 @@ app/layout.tsx            title: "我的网站"（含模板）
 <h2>7. 怎么验证元数据写对了</h2>
 
 <ol>
-  <li><strong>查看网页源代码</strong>（Ctrl+U），看 <code>&lt;head&gt;</code> 里的{" "}
+  <li><strong>查看网页源代码</strong>（Ctrl+U），看 <code>&lt;head&gt;</code> 里的
       <code>&lt;title&gt;</code> 和 <code>&lt;meta&gt;</code>——最直接。</li>
   <li><strong>开发者工具的 Elements 面板</strong>——注意这里看到的是
       「运行时」的结果，和源代码可能有差异（有些标签是 JS 加上去的）。</li>

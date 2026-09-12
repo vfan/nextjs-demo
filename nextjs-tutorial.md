@@ -1809,7 +1809,7 @@ export default function Nav() {
 }
 ```
 
-> **一个会直接导致构建失败的坑：**用了{" "}
+> **一个会直接导致构建失败的坑：**用了
 > `useSearchParams()` 的组件，必须被 `<Suspense>` 包住，
 > 否则 `npm run build` 会报错。
 > 
@@ -1830,7 +1830,7 @@ export default function Nav() {
 > `next/router` 是旧版 Pages Router 的入口，在 App Router 中使用
 > 会得到 `undefined` 或直接报错。
 > 
-> 你搜到的大部分中文教程如果写的是{" "}
+> 你搜到的大部分中文教程如果写的是
 > `import { useRouter } from "next/router"`，
 > 那说明它是 Pages Router 时代的——对 App Router 不适用。
 

@@ -97,8 +97,8 @@
 <div class="callout danger">
   <strong>先说明一个命名变化，否则你会以为走错了章节。</strong>
   <br /><br />
-  Next.js 16 把这个约定文件从 <code>middleware.ts</code> 改名成了{" "}
-  <code>proxy.ts</code>，导出的函数也从 <code>middleware</code> 改成了{" "}
+  Next.js 16 把这个约定文件从 <code>middleware.ts</code> 改名成了
+  <code>proxy.ts</code>，导出的函数也从 <code>middleware</code> 改成了
   <code>proxy</code>。功能完全一样，官方只是认为 "proxy"（代理）
   更能准确表达它的本质。
   <ul style="margin:10px 0 0 20px;">
@@ -108,7 +108,7 @@
         函数 <code>export function proxy()</code></li>
   </ul>
   <p style="margin:10px 0 0;">
-    旧项目里的 <code>middleware.ts</code> 和新项目里的 <code>proxy.ts</code>{" "}
+    旧项目里的 <code>middleware.ts</code> 和新项目里的 <code>proxy.ts</code>
     是同一个东西，社区里仍然普遍称它为「中间件」。
     本 demo 用的是 Next.js 16，所以文件是 <code>proxy.ts</code>。
     官方也提供了自动迁移命令：<code>npx @next/codemod@canary middleware-to-proxy .</code>

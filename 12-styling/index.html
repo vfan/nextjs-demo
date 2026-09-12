@@ -134,7 +134,7 @@
 <h2>2. 全局 CSS：只能从根布局引入</h2>
 
 <div class="callout danger">
-  <strong>这是一条容易困惑的规则：全局 CSS 只能在{" "}
+  <strong>这是一条容易困惑的规则：全局 CSS 只能在
   <code>app/layout.tsx</code> 里引入。</strong>
   <br /><br />
   在别的文件里 <code>import &quot;./styles.css&quot;</code> 会报错。
@@ -231,7 +231,7 @@ body {
 所以这里的 <code>.card</code> 和别处的 <code>.card</code> 永远不会冲突。</p>
 
 <div class="callout info">
-  <strong>怎么亲眼看到？</strong>打开 demo 的{" "}
+  <strong>怎么亲眼看到？</strong>打开 demo 的
   <code>/styling/css-modules</code>，用开发者工具的 Elements 面板看那些 div
   的 <code>class</code> 属性——你会看到带随机后缀的名字。
   <br /><br />
@@ -340,8 +340,8 @@ body {
 
 <div class="callout danger">
   <strong>别直接拼 <code>&amp;&amp;</code>。</strong>
-  <code className="path">`badge ${isActive &amp;&amp; &quot;active&quot;}`</code>{" "}
-  在条件为假时会拼出字面量 <code>"false"</code>，变成{" "}
+  <code className="path">`badge ${isActive &amp;&amp; &quot;active&quot;}`</code>
+  在条件为假时会拼出字面量 <code>"false"</code>，变成
   <code>class="badge false"</code>。多数情况下不影响显示，
   但很脏，也容易掩盖真正的 bug。
 </div>
@@ -381,7 +381,7 @@ body {
         <code>class</code> 属性，确认类名被加了哈希后缀。</li>
     <li>打开 <code>/styling/conditional</code>，切换三个状态看颜色变化；
         切到「已完成」时第二个徽章会多出蓝色描边（那是可选类名生效了）。</li>
-    <li>试着在 <code>demo/app/styling/page.tsx</code> 里{" "}
+    <li>试着在 <code>demo/app/styling/page.tsx</code> 里
         <code>import &quot;./globals.css&quot;</code>，然后构建，看报错信息。</li>
   </ol>
 </div>

@@ -298,8 +298,7 @@ router.<span class="fn">refresh</span>()               <span class="cmt">// 不�
 </div>
 
 <div class="callout danger">
-  <strong>一个会直接导致构建失败的坑：</strong>用了{" "}
-  <code>useSearchParams()</code> 的组件，必须被 <code>&lt;Suspense&gt;</code> 包住，
+  <strong>一个会直接导致构建失败的坑：</strong>用了  <code>useSearchParams()</code> 的组件，必须被 <code>&lt;Suspense&gt;</code> 包住，
   否则 <code>npm run build</code> 会报错。
   <br /><br />
   原因：查询参数是「每次请求才有的信息」，而静态页面在构建时压根不知道它是什么。
@@ -324,8 +323,7 @@ router.<span class="fn">refresh</span>()               <span class="cmt">// 不�
   <code>next/router</code> 是旧版 Pages Router 的入口，在 App Router 中使用
   会得到 <code>undefined</code> 或直接报错。
   <br /><br />
-  你搜到的大部分中文教程如果写的是{" "}
-  <code>import &#123; useRouter &#125; from &quot;next/router&quot;</code>，
+  你搜到的大部分中文教程如果写的是  <code>import &#123; useRouter &#125; from &quot;next/router&quot;</code>，
   那说明它是 Pages Router 时代的——对 App Router 不适用。
 </div>
 
