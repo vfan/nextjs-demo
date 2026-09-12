@@ -1,9 +1,10 @@
 # Next.js 教程（App Router）
 
 一套面向初学者的 Next.js 教程，**每个文件夹讲清楚一个知识点**，每个知识点配一份
-HTML 图解，所有代码集中在**一个可运行的 demo 项目**里。
+图解讲解，所有代码集中在**一个可运行的 demo 项目**里。
 
 教程只讲 App Router（`app/` 目录），不涉及已过时的 Pages Router。
+共 14 章，提供两个版本：[单文件 Markdown](nextjs-tutorial.md) 和 [分章 HTML](index.html)。
 
 ---
 
@@ -28,7 +29,9 @@ HTML 图解，所有代码集中在**一个可运行的 demo 项目**里。
 
 ```
 nextjs-demo/
+├── nextjs-tutorial.md               ← 全部 14 章合并成的单文件讲义（Markdown）
 ├── index.html                       ← 教程总目录（浏览器直接打开）
+├── README.md                        ← 本文件
 │
 ├── 01-rendering-strategies/         ← 渲染策略：CSR / SSR / SSG / ISR
 │   └── index.html
@@ -54,18 +57,30 @@ nextjs-demo/
     └── app/                         ← 所有章节的示例路由
 ```
 
+课件有**两个版本，内容一致**：
+
+- `nextjs-tutorial.md` —— 14 章合并成的一个 Markdown 文件，带目录，适合通读、
+  打印或发布到支持 Markdown 的平台；
+- `01-…` 到 `14-…` 这 14 个文件夹 —— 每章一份独立的 HTML 图解，
+  排版更丰富，适合在浏览器里逐章阅读。
+
 章节文件夹里**只有 HTML**，代码全部在 `demo/app/` 下。每章讲解里都会注明
 「本章的代码在 demo 的哪个路由、哪个文件」。
 
 ---
 
-## 两个入口
+## 三个入口
 
-### 1. 读教程（不需要装任何东西）
+### 1. 通读全文（Markdown）
 
-直接用浏览器打开根目录的 `index.html`，它会链接到每一章的讲解页。
+打开 [`nextjs-tutorial.md`](nextjs-tutorial.md)。单文件、自带目录，
+14 章从头到尾。
 
-### 2. 跑代码（需要 Node.js）
+### 2. 逐章阅读（HTML 图解）
+
+用浏览器打开根目录的 `index.html`，它会链接到每一章的图解页面。
+
+### 3. 跑代码（需要 Node.js）
 
 ```bash
 cd demo
