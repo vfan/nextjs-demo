@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 · Server Actions — Next.js 教程</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #fff;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .container { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  nav { margin-bottom: 40px; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  nav span { color: #999; margin: 0 8px; }
+
+  h1 { font-size: 2.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px; }
+  .chap-label { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .intro { color: var(--text-secondary); font-size: 1.05rem; margin: 12px 0 40px; max-width: 660px; }
+
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 50px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 32px 0 10px; }
+
+  p { margin-bottom: 14px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; }
+
+  .code-block {
+    background: #1e1e1e; color: #d4d4d4; border-radius: 8px;
+    padding: 18px 22px; margin: 14px 0 18px; overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85rem; line-height: 1.7;
+  }
+  .code-block .kw { color: #569cd6; }
+  .code-block .fn { color: #dcdcaa; }
+  .code-block .str { color: #ce9178; }
+  .code-block .cmt { color: #6a9955; }
+  .code-block .tag { color: #4ec9b0; }
+  .code-block .hl { color: #ffd479; }
+
+  .illustration {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px 28px; margin: 22px 0; overflow-x: auto;
+  }
+  .illustration pre { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.85rem; line-height: 1.75; color: #333; }
+
+  .callout { background: #fff8e1; border-left: 3px solid #f0b400; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 20px 0; font-size: 0.93rem; }
+  .callout.info { background: #e8f4fd; border-left-color: var(--accent); }
+  .callout.danger { background: #fdecec; border-left-color: #e5484d; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 22px; font-size: 0.9rem; }
+  th { background: #f5f5f5; text-align: left; padding: 10px 12px; border: 1px solid var(--border); font-weight: 600; }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+
+  .nav-bottom { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; }
+  .nav-bottom a { color: var(--accent); text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav>
+  <a href="../index.html">教程首页</a><span>/</span>10 · Server Actions
+</nav>
+
+<div class="chap-label">第十章</div>
+<h1>Server Actions</h1>
+<p class="intro">
+  上一章写了接口、客户端组件、fetch、useState、手动刷新——
+  就为了「提交一句话，列表更新」。Server Actions 把这套流程压成
+  一个函数加一个 <code>&lt;form&gt;</code>。
+</p>
+
+<div class="callout info" style="margin-bottom:32px;">
+  <strong>配套可运行代码：</strong>本章在 demo 的 <code>/server-actions</code> 路由下。
+  执行 <code>npm install &amp;&amp; npm run dev</code> 后访问
+  <code>http://localhost:3000/server-actions</code>。
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2>1. 先看「不用它」有多麻烦</h2>
+
+<p>假设要做一个「提交留言」的功能。用第九章的接口方式，你需要：</p>
+
+<ol>
+  <li>写一个 <code>POST /api/notes</code> 接口；</li>
+  <li>把表单做成客户端组件，用 <code>useState</code> 管理输入框的值；</li>
+  <li>写 <code>onSubmit</code>，在里面对接口发 <code>fetch</code>；</li>
+  <li>设置 <code>Content-Type</code>、<code>JSON.stringify</code> 请求体；</li>
+  <li>管理 loading 状态和错误状态；</li>
+  <li>提交成功后，再手动发一次请求把列表刷新出来。</li>
+</ol>
+
+<p>Server Actions 把这些全部收进一个函数里：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// 服务端函数</span>
+<span class="hl">"use server"</span>
+
+<span class="kw">export async function</span> <span class="fn">addNoteAction</span>(formData: FormData) {
+  <span class="fn">addNote</span>(<span class="fn">String</span>(formData.<span class="fn">get</span>(<span class="str">"text"</span>)))
+  <span class="fn">revalidatePath</span>(<span class="str">"/notes"</span>)
+}
+
+<span class="cmt">// 服务端组件里直接用</span>
+<span class="tag">&lt;form</span> <span class="fn">action</span>={addNoteAction}<span class="tag">&gt;</span>
+  <span class="tag">&lt;input</span> <span class="fn">name</span>=<span class="str">"text"</span> <span class="tag">/&gt;</span>
+  <span class="tag">&lt;button&gt;</span>提交<span class="tag">&lt;/button&gt;</span>
+<span class="tag">&lt;/form&gt;</span>
+</pre>
+</div>
+
+<p>没有接口、没有客户端组件、没有 useState、没有 fetch。
+而且<strong>连 JavaScript 都不需要</strong>——它就是一个普通的 HTML 表单提交。</p>
+
+<!-- ==================== 2 ==================== -->
+<h2>2. "use server" 写在哪儿</h2>
+
+<p>两种写法，按复用需求选：</p>
+
+<h3>① 独立的 action 文件（推荐，可复用）</h3>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/server-actions/actions.ts</span>
+<span class="hl">"use server"</span>   <span class="cmt">// 文件顶部的这一行，让所有导出都变成服务端函数</span>
+
+<span class="kw">export async function</span> <span class="fn">addNoteAction</span>(formData: FormData) { ... }
+<span class="kw">export async function</span> <span class="fn">deleteNoteAction</span>(formData: FormData) { ... }
+</pre>
+</div>
+
+<h3>② 内联在组件里（适合只用一次）</h3>
+
+<div class="code-block">
+<pre>
+<span class="kw">export default function</span> <span class="fn">Page</span>() {
+  <span class="kw">async function</span> <span class="fn">addNoteInline</span>(formData: FormData) {
+    <span class="hl">"use server"</span>   <span class="cmt">// 写在函数体第一行</span>
+    ...
+  }
+
+  <span class="kw">return</span> <span class="tag">&lt;form</span> <span class="fn">action</span>={addNoteInline}<span class="tag">&gt;</span>...<span class="tag">&lt;/form&gt;</span>
+}
+</pre>
+</div>
+
+<div class="callout danger">
+  <strong>内联的 action 不能写在客户端组件里。</strong>
+  客户端组件要用 action，只能 import 一个已经定义好的服务端函数
+  （也就是说，只能在 <code>&quot;use server&quot;</code> 文件里定义好了再引进来）。
+</div>
+
+<!-- ==================== 3 ==================== -->
+<h2>3. 关键一步：revalidatePath</h2>
+
+<div class="callout danger">
+  <strong>漏掉这一行，是初学 Server Actions 最常见的挫折。</strong>
+  <br /><br />
+  数据明明改成功了，页面却纹丝不动。原因是服务端组件的渲染结果被缓存了，
+  数据库变了它并不知道。你得明确告诉它「这块数据过期了」。
+</div>
+
+<div class="code-block">
+<pre>
+<span class="kw">import</span> { revalidatePath } <span class="kw">from</span> <span class="str">"next/cache"</span>
+
+<span class="kw">export async function</span> <span class="fn">deleteNoteAction</span>(formData: FormData) {
+  <span class="fn">deleteNote</span>(<span class="fn">String</span>(formData.<span class="fn">get</span>(<span class="str">"id"</span>)))
+
+  <span class="hl">revalidatePath(<span class="str">"/server-actions"</span>)</span>   <span class="cmt">// 让这个路径重新取数据</span>
+}
+</pre>
+</div>
+
+<p>还有一种更精确的写法，按标签失效：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// 取数据时打标签</span>
+<span class="kw">const</span> notes = <span class="kw">await</span> <span class="fn">fetch</span>(url, { next: { tags: [<span class="str">"notes"</span>] } })
+
+<span class="cmt">// 修改时只失效这个标签</span>
+<span class="fn">revalidateTag</span>(<span class="str">"notes"</span>)
+</pre>
+</div>
+
+<p>路径失效是「把这一页整个重算」，标签失效是「把用了这个标签的数据重算」。
+页面多、数据交叉复用时，标签更精准。</p>
+
+<!-- ==================== 4 ==================== -->
+<h2>4. 需要校验和提交状态时：useActionState</h2>
+
+<p>纯表单提交不需要客户端组件。但只要涉及「校验失败要显示提示」
+或者「提交时按钮要转圈」，就需要 <code>useActionState</code>：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// 服务端：action 的签名变成 (上一次的结果, formData)</span>
+<span class="hl">"use server"</span>
+<span class="kw">export async function</span> <span class="fn">addNoteAction</span>(
+  _prevState: FormState,
+  formData: FormData,
+): <span class="kw">Promise</span>&lt;FormState&gt; {
+  <span class="kw">const</span> text = <span class="fn">String</span>(formData.<span class="fn">get</span>(<span class="str">"text"</span>) ?? <span class="str">""</span>).<span class="fn">trim</span>()
+
+  <span class="kw">if</span> (!text) <span class="kw">return</span> { error: <span class="str">"内容不能为空"</span> }   <span class="cmt">// 校验失败，返回错误</span>
+
+  <span class="fn">addNote</span>(text)
+  <span class="fn">revalidatePath</span>(<span class="str">"/server-actions"</span>)
+  <span class="kw">return</span> { ok: <span class="kw">true</span> }
+}
+</pre>
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// 客户端</span>
+<span class="hl">"use client"</span>
+<span class="kw">import</span> { useActionState } <span class="kw">from</span> <span class="str">"react"</span>   <span class="cmt">// React 19 起来自 react</span>
+
+<span class="kw">const</span> [state, formAction, isPending] = <span class="fn">useActionState</span>(addNoteAction, {})
+
+<span class="kw">return</span> (
+  <span class="tag">&lt;form</span> <span class="fn">action</span>={formAction}<span class="tag">&gt;</span>
+    <span class="tag">&lt;input</span> <span class="fn">name</span>=<span class="str">"text"</span> <span class="fn">disabled</span>={isPending} <span class="tag">/&gt;</span>
+    <span class="tag">&lt;button</span> <span class="fn">disabled</span>={isPending}<span class="tag">&gt;</span>
+      {isPending ? <span class="str">"提交中…"</span> : <span class="str">"发布"</span>}
+    <span class="tag">&lt;/button&gt;</span>
+    {state.error ? <span class="tag">&lt;p&gt;</span>{state.error}<span class="tag">&lt;/p&gt;</span> : <span class="kw">null</span>}
+  <span class="tag">&lt;/form&gt;</span>
+)
+</pre>
+</div>
+
+<p><code>useActionState</code> 返回三样东西，刚好解决三个问题：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:26%;">返回值</th><th>用途</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>state</code></td>
+      <td>上一次 action 的返回值 → 显示「校验失败」或「成功」</td>
+    </tr>
+    <tr>
+      <td><code>formAction</code></td>
+      <td>绑到 <code>&lt;form action=&#123;...&#125;&gt;</code> 上</td>
+    </tr>
+    <tr>
+      <td><code>isPending</code></td>
+      <td>是否正在提交 → 禁用按钮、显示「提交中…」</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout info">
+  <strong>顺带解决了一个老问题。</strong>
+  第五章说过「服务端组件取数据没有加载状态」。而提交表单这类操作，
+  执行的正是服务端代码——<code>isPending</code> 就是补上的那个加载状态。
+</div>
+
+<!-- ==================== 5 ==================== -->
+<h2>5. 安全：几个必须知道的边界</h2>
+
+<div class="callout danger">
+  <strong>Server Action 本质上是「公有的 HTTP 接口」。</strong>
+  虽然你写的是普通函数，但 Next.js 会为它生成一个可被调用的端点。
+  任何人都能像调用接口一样调用它——包括伪造参数。
+  <br /><br />
+  所以：<strong>所有校验都必须在 action 内部做</strong>，
+  不能相信任何来自客户端的数据，也不能依赖客户端做了校验就跳过服务端校验。
+</div>
+
+<p>几条实践建议：</p>
+
+<ul>
+  <li>在 action 里<strong>先鉴权</strong>，再操作数据：
+      <code>const session = await getSession(); if (!session) throw new Error("未登录")</code>；</li>
+  <li>永远不要假设 <code>formData</code> 里的值合法，哪怕是隐藏字段；</li>
+  <li>不要返回敏感信息——返回值会传回浏览器；</li>
+  <li>只有<strong>被导出</strong>的函数才会变成可调用的端点，
+      内部辅助函数不要导出。</li>
+</ul>
+
+<!-- ==================== 6 ==================== -->
+<h2>6. Server Action 还是 route.ts？</h2>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:26%;"></th><th>Server Action</th><th>route.ts</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>调用方</strong></td>
+      <td>自己的页面、自己的组件</td>
+      <td>任何外部系统</td>
+    </tr>
+    <tr>
+      <td><strong>写法</strong></td>
+      <td>一个函数，直接绑到表单</td>
+      <td>手写 HTTP 方法、状态码、请求体解析</td>
+    </tr>
+    <tr>
+      <td><strong>需要写客户端代码吗</strong></td>
+      <td>通常不需要</td>
+      <td>调用方要自己写 fetch</td>
+    </tr>
+    <tr>
+      <td><strong>典型场景</strong></td>
+      <td>表单提交、点赞、删除、开关</td>
+      <td>公开 API、Webhook、给手机端用</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout info">
+  <strong>判断标准：调用方是不是「你自己写的前端」？</strong>
+  <br />
+  是 → 优先 Server Actions，代码少、还自带重新验证数据的机制。
+  <br />
+  不是 → 老老实实写 <code>route.ts</code>。
+</div>
+
+<!-- ==================== 7 ==================== -->
+<h2>7. 代码示例与 demo 对照</h2>
+
+<div class="callout info">
+  <strong>本章 demo 路由：</strong><code>/server-actions</code>
+  <ul style="margin:8px 0 0 20px;">
+    <li>列表 + 删除（服务端组件的表单）→ <code>demo/app/server-actions/page.tsx</code></li>
+    <li>内联 action → <code>demo/app/server-actions/simple/page.tsx</code></li>
+    <li>带校验的表单（客户端）→ <code>demo/app/server-actions/validated/note-form.tsx</code></li>
+    <li>所有 action → <code>demo/app/server-actions/actions.ts</code></li>
+    <li>内存数据 → <code>demo/app/server-actions/store.ts</code></li>
+  </ul>
+</div>
+
+<div class="callout">
+  <strong>动手验证：</strong>
+  <ol style="margin:8px 0 0 20px;">
+    <li>打开 <code>/server-actions</code>，点某条留言的「删除」——
+        列表立刻更新，因为 action 里调用了 <code>revalidatePath</code>。</li>
+    <li>去 <code>/server-actions/validated</code>，分别试「空内容」和「超过 40 字」，
+        看错误提示怎么出现。</li>
+    <li>提交时留意按钮变成「提交中…」——那是 <code>isPending</code> 在起作用。</li>
+  </ol>
+</div>
+
+<!-- ==================== 8 ==================== -->
+<h2>8. 小结</h2>
+
+<ul>
+  <li><code>&quot;use server&quot;</code> 写在文件顶部（所有导出都变服务端函数）
+      或函数体第一行（内联）。</li>
+  <li>服务端组件的 <code>&lt;form action=&#123;fn&#125;&gt;</code> 不需要任何客户端 JS。</li>
+  <li>内联 action 不能定义在客户端组件里。</li>
+  <li><strong>改完数据必须 <code>revalidatePath</code> / <code>revalidateTag</code></strong>，
+      否则页面不会更新。</li>
+  <li>要校验提示和提交状态就用 <code>useActionState</code>，它返回
+      <code>state</code> / <code>formAction</code> / <code>isPending</code>。</li>
+  <li>Server Action 是公开端点，<strong>所有校验和鉴权都必须在 action 内部完成</strong>。</li>
+  <li>给自己的前端用 → Server Actions；给外部用 → <code>route.ts</code>。</li>
+</ul>
+
+<p>下一章讲怎么让页面在搜索引擎和社交平台上有正确的标题、描述和分享卡片。</p>
+
+<div class="nav-bottom">
+  <a href="../09-route-handlers/index.html">← 上一章：API 路由</a>
+  <a href="../11-metadata-seo/index.html">下一章：SEO 与元数据 →</a>
+</div>
+
+</div>
+</body>
+</html>

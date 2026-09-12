@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11 · SEO 与元数据 — Next.js 教程</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #fff;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .container { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  nav { margin-bottom: 40px; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  nav span { color: #999; margin: 0 8px; }
+
+  h1 { font-size: 2.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px; }
+  .chap-label { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .intro { color: var(--text-secondary); font-size: 1.05rem; margin: 12px 0 40px; max-width: 660px; }
+
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 50px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 32px 0 10px; }
+
+  p { margin-bottom: 14px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; }
+
+  .code-block {
+    background: #1e1e1e; color: #d4d4d4; border-radius: 8px;
+    padding: 18px 22px; margin: 14px 0 18px; overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85rem; line-height: 1.7;
+  }
+  .code-block .kw { color: #569cd6; }
+  .code-block .fn { color: #dcdcaa; }
+  .code-block .str { color: #ce9178; }
+  .code-block .cmt { color: #6a9955; }
+  .code-block .tag { color: #4ec9b0; }
+  .code-block .hl { color: #ffd479; }
+
+  .illustration {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px 28px; margin: 22px 0; overflow-x: auto;
+  }
+  .illustration pre { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.85rem; line-height: 1.75; color: #333; }
+
+  .callout { background: #fff8e1; border-left: 3px solid #f0b400; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 20px 0; font-size: 0.93rem; }
+  .callout.info { background: #e8f4fd; border-left-color: var(--accent); }
+  .callout.danger { background: #fdecec; border-left-color: #e5484d; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 22px; font-size: 0.9rem; }
+  th { background: #f5f5f5; text-align: left; padding: 10px 12px; border: 1px solid var(--border); font-weight: 600; }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+
+  .nav-bottom { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; }
+  .nav-bottom a { color: var(--accent); text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav>
+  <a href="../index.html">教程首页</a><span>/</span>11 · SEO 与元数据
+</nav>
+
+<div class="chap-label">第十一章</div>
+<h1>SEO 与元数据</h1>
+<p class="intro">
+  元数据是「关于页面的数据」——它不出现在页面上，但浏览器标签页、
+  搜索结果、分享到微信时的卡片全靠它。这一章讲怎么在 Next.js 里配置它。
+</p>
+
+<div class="callout info" style="margin-bottom:32px;">
+  <strong>配套可运行代码：</strong>本章在 demo 的 <code>/metadata</code> 路由下。
+  执行 <code>npm install &amp;&amp; npm run dev</code> 后访问
+  <code>http://localhost:3000/metadata</code>。
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2>1. 静态元数据：导出一个对象</h2>
+
+<p>在 <code>page.tsx</code> 或 <code>layout.tsx</code> 里导出一个叫{" "}
+<code>metadata</code> 的常量：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/metadata/page.tsx</span>
+<span class="kw">import type</span> { Metadata } <span class="kw">from</span> <span class="str">"next"</span>
+
+<span class="hl">export const metadata: Metadata = {</span>
+  title: <span class="str">"SEO 与元数据"</span>,
+  description: <span class="str">"演示 Next.js 的元数据配置……"</span>,
+  openGraph: {
+    title: <span class="str">"SEO 与元数据"</span>,
+    type: <span class="str">"website"</span>,
+  },
+}
+
+<span class="kw">export default function</span> <span class="fn">Page</span>() { ... }
+</pre>
+</div>
+
+<p>Next.js 会把它渲染成 HTML 里的 <code>&lt;title&gt;</code> 和一堆{" "}
+<code>&lt;meta&gt;</code> 标签。你不需要自己写 <code>&lt;head&gt;</code>。</p>
+
+<h3>常用字段</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:22%;">字段</th><th style="width:34%;">出现在哪</th><th>建议</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>title</code></td>
+      <td>浏览器标签页、搜索结果标题</td>
+      <td>50～60 字以内，把关键词放前面</td>
+    </tr>
+    <tr>
+      <td><code>description</code></td>
+      <td>搜索结果里的摘要</td>
+      <td>150～160 字，直接影响点击率</td>
+    </tr>
+    <tr>
+      <td><code>openGraph</code></td>
+      <td>社交平台分享卡片</td>
+      <td>微信、Slack、Twitter 都读它</td>
+    </tr>
+    <tr>
+      <td><code>robots</code></td>
+      <td>是否允许收录</td>
+      <td>后台页面设 <code>noindex</code></td>
+    </tr>
+    <tr>
+      <td><code>metadataBase</code></td>
+      <td>其他字段里相对路径的基准</td>
+      <td>在根布局设置一次</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ==================== 2 ==================== -->
+<h2>2. title 模板：全站统一后缀</h2>
+
+<p>如果每个页面标题都想带「| 我的网站」后缀，不用一页页手写：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/layout.tsx —— 根布局里配置一次</span>
+<span class="kw">export const</span> metadata: Metadata = {
+  title: {
+    default: <span class="str">"我的网站"</span>,              <span class="cmt">// 没设置 title 的页面用这个</span>
+    template: <span class="str">"%s | 我的网站"</span>,        <span class="cmt">// %s 被子页面标题替换</span>
+  },
+}
+
+<span class="cmt">// 子页面只需要写自己那部分</span>
+<span class="kw">export const</span> metadata: Metadata = { title: <span class="str">"关于我们"</span> }
+<span class="cmt">// → 最终渲染为 "关于我们 | 我的网站"</span>
+</pre>
+</div>
+
+<!-- ==================== 3 ==================== -->
+<h2>3. 一个必须记住的限制</h2>
+
+<div class="callout danger">
+  <strong><code>metadata</code> 只能从服务端组件里导出。</strong>
+  <br /><br />
+  如果你在 <code>&quot;use client&quot;</code> 文件里写{" "}
+  <code>export const metadata</code>，构建会直接报错。
+  <br /><br />
+  为什么？因为元数据要写进 HTML 的 <code>&lt;head&gt;</code>，
+  而这部分内容必须在服务端就确定好，不能等到浏览器里再算。
+</div>
+
+<p>客户端组件要影响元数据，只能通过它的父级服务端组件。也就是说：
+把需要元数据的部分包在一个服务端组件里，由它来导出 <code>metadata</code>。</p>
+
+<!-- ==================== 4 ==================== -->
+<h2>4. 分层与覆盖（有个坑）</h2>
+
+<p><code>metadata</code> 和 <code>layout.tsx</code> 一样是就近生效的：
+根布局定义默认值，子布局可以覆盖，页面优先级最高。</p>
+
+<div class="illustration">
+<pre>
+app/layout.tsx            title: "我的网站"（含模板）
+ └ app/blog/layout.tsx    title: "博客"
+     └ app/blog/page.tsx  title: "最新文章"
+                            → 最终用页面自己的</pre>
+</div>
+
+<div class="callout danger">
+  <strong>坑在这里：<code>metadata</code> 是<strong>整体替换</strong>，不是逐字段合并。</strong>
+  <br /><br />
+  假设根布局写了：
+  <br />
+  <code>openGraph: &#123; siteName: "我的网站", type: "website" &#125;</code>
+  <br /><br />
+  子页面只写了：
+  <br />
+  <code>openGraph: &#123; title: "文章标题" &#125;</code>
+  <br /><br />
+  那么子页面的 <code>siteName</code> 和 <code>type</code> <strong>都会消失</strong>，
+  而不是继承下来。要保留就得重新写一遍。
+</div>
+
+<!-- ==================== 5 ==================== -->
+<h2>5. 动态元数据：generateMetadata</h2>
+
+<p>当标题需要根据 URL 或数据变化时，导出一个异步函数：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/metadata/dynamic/[slug]/page.tsx</span>
+<span class="hl">export async function generateMetadata(</span>
+  { params }: { params: <span class="kw">Promise</span>&lt;{ slug: <span class="kw">string</span> }&gt; },
+<span class="hl">): Promise&lt;Metadata&gt; {</span>
+  <span class="kw">const</span> { slug } = <span class="kw">await</span> params          <span class="cmt">// params 依然是 Promise</span>
+  <span class="kw">const</span> article = <span class="fn">getArticle</span>(slug)
+
+  <span class="kw">if</span> (!article) {
+    <span class="cmt">// 找不到就别让搜索引擎收录</span>
+    <span class="kw">return</span> { title: <span class="str">"文章不存在"</span>, robots: { index: <span class="kw">false</span> } }
+  }
+
+  <span class="kw">return</span> {
+    title: article.title,
+    description: article.summary,
+    openGraph: {
+      title: article.title,
+      description: article.summary,
+      type: <span class="str">"article"</span>,
+      publishedTime: article.publishedAt,
+    },
+  }
+}
+</pre>
+</div>
+
+<p>几个要点：</p>
+
+<ul>
+  <li>它和页面组件是「兄弟」，接收<strong>同样的参数</strong>。</li>
+  <li><code>params</code> 是 Promise，要 <code>await</code>（和页面里一样）。</li>
+  <li>它在服务端执行，可以放心查数据库。</li>
+  <li>页面里为了省一次查询，通常会把结果缓存起来复用
+      （React 的 <code>cache()</code> 就是干这个的）。</li>
+</ul>
+
+<div class="callout info">
+  <strong>什么时候用静态、什么时候用动态？</strong>
+  一句话：<strong>标题会随 URL 变化吗？</strong>
+  不会（首页、关于页）→ 静态 <code>metadata</code>；
+  会（文章详情、商品页）→ <code>generateMetadata</code>。
+</div>
+
+<!-- ==================== 6 ==================== -->
+<h2>6. 分享卡片：Open Graph</h2>
+
+<p>把链接发到微信、Slack、Twitter 时显示的那张卡片，读的就是 Open Graph 标签：</p>
+
+<div class="code-block">
+<pre>
+<span class="kw">export const</span> metadata: Metadata = {
+  openGraph: {
+    title: <span class="str">"文章标题"</span>,
+    description: <span class="str">"一句话摘要"</span>,
+    url: <span class="str">"https://example.com/article"</span>,
+    siteName: <span class="str">"我的网站"</span>,
+    images: [{ url: <span class="str">"/og.png"</span>, width: <span class="str">1200</span>, height: <span class="str">630</span> }],
+    locale: <span class="str">"zh_CN"</span>,
+    type: <span class="str">"article"</span>,
+  },
+  twitter: {
+    card: <span class="str">"summary_large_image"</span>,
+  },
+}
+</pre>
+</div>
+
+<div class="callout">
+  <strong>图片尺寸建议 1200×630。</strong>这是各家平台通用的比例，
+  太小会被裁切、太大加载慢。没有图片的话，大多数平台会退而求其次
+  用页面里的第一张图，效果往往不可控——最好显式指定。
+</div>
+
+<h3>特殊文件约定：连函数都不用写</h3>
+
+<p>除了导出对象，Next.js 还认一批<strong>特殊的文件名</strong>。
+把文件放进目录，元数据就自动生效：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:34%;">文件名</th><th>作用</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>favicon.ico</code></td><td>浏览器标签页的小图标</td></tr>
+    <tr><td><code>icon.png</code></td><td>App 图标（自动生成多个尺寸）</td></tr>
+    <tr><td><code>opengraph-image.png</code></td><td>分享卡片默认图片</td></tr>
+    <tr><td><code>sitemap.ts</code></td><td>导出函数自动生成 <code>/sitemap.xml</code></td></tr>
+    <tr><td><code>robots.ts</code></td><td>导出函数自动生成 <code>/robots.txt</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>其中 <code>sitemap.ts</code> 和 <code>robots.ts</code> 很值得一用——它们是代码，
+所以可以动态列出所有文章 URL：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/sitemap.ts</span>
+<span class="kw">export default function</span> <span class="fn">sitemap</span>() {
+  <span class="kw">return</span> articles.<span class="fn">map</span>((a) =&gt; ({
+    url: <span class="str">`https://example.com/blog/${a.slug}`</span>,
+    lastModified: a.publishedAt,
+  }))
+}
+<span class="cmt">// 于是自动有了 /sitemap.xml</span>
+</pre>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<h2>7. 怎么验证元数据写对了</h2>
+
+<ol>
+  <li><strong>查看网页源代码</strong>（Ctrl+U），看 <code>&lt;head&gt;</code> 里的{" "}
+      <code>&lt;title&gt;</code> 和 <code>&lt;meta&gt;</code>——最直接。</li>
+  <li><strong>开发者工具的 Elements 面板</strong>——注意这里看到的是
+      「运行时」的结果，和源代码可能有差异（有些标签是 JS 加上去的）。</li>
+  <li><strong>社交平台官方的调试工具</strong>——分享卡片最终长什么样，
+      以它们为准。它们会缓存，改完记得让工具重新抓取一次。</li>
+</ol>
+
+<div class="callout">
+  <strong>一个容易被忽略的点：</strong>元数据必须出现在<strong>服务端渲染的
+  HTML 里</strong>才有 SEO 价值。如果是靠客户端 JS 事后插入的，
+  很多爬虫根本看不到。这也正是「<code>metadata</code> 只能从服务端组件导出」
+  这条限制背后的原因。
+</div>
+
+<!-- ==================== 8 ==================== -->
+<h2>8. 代码示例与 demo 对照</h2>
+
+<div class="callout info">
+  <strong>本章 demo 路由：</strong><code>/metadata</code>
+  <ul style="margin:8px 0 0 20px;">
+    <li>静态元数据 → <code>demo/app/metadata/page.tsx</code></li>
+    <li>文章列表 → <code>demo/app/metadata/dynamic/page.tsx</code></li>
+    <li>动态元数据 → <code>demo/app/metadata/dynamic/[slug]/page.tsx</code></li>
+    <li>模拟数据 → <code>demo/app/metadata/data.ts</code></li>
+    <li>全站标题模板 → <code>demo/app/layout.tsx</code></li>
+  </ul>
+</div>
+
+<div class="callout">
+  <strong>动手验证：</strong>
+  <ol style="margin:8px 0 0 20px;">
+    <li>打开 <code>/metadata</code>，<code>Ctrl+U</code> 找 <code>&lt;title&gt;</code>，
+        确认后缀「· Next.js 教程 Demo」来自根布局的模板。</li>
+    <li>打开 <code>/metadata/dynamic/metadata-basics</code> 和另一篇文章，
+        对比两者的 <code>&lt;title&gt;</code> 与 <code>description</code>——
+        都不一样，这就是 <code>generateMetadata</code> 的效果。</li>
+    <li>访问一个不存在的 slug，看返回的标题是不是「文章不存在」。</li>
+  </ol>
+</div>
+
+<!-- ==================== 9 ==================== -->
+<h2>9. 小结</h2>
+
+<ul>
+  <li>导出 <code>metadata</code> 对象即可生成 <code>&lt;title&gt;</code> 和 <code>&lt;meta&gt;</code>。</li>
+  <li>根布局可以用 <code>title.template</code> 统一加后缀。</li>
+  <li><strong><code>metadata</code> 只能从服务端组件导出</strong>，客户端组件不行。</li>
+  <li>分层生效，但<strong>整体替换而非逐字段合并</strong>——这是个坑。</li>
+  <li>标题随 URL 变化时用 <code>generateMetadata</code>，参数同样是 Promise。</li>
+  <li>分享卡片靠 <code>openGraph</code>，图片建议 1200×630。</li>
+  <li><code>sitemap.ts</code> / <code>robots.ts</code> / <code>opengraph-image.png</code>
+      等特殊文件名可以省掉手写配置。</li>
+  <li>元数据必须在服务端渲染的 HTML 里才有效。</li>
+</ul>
+
+<p>下一章讲样式——CSS Modules、全局样式，以及条件类名怎么写。</p>
+
+<div class="nav-bottom">
+  <a href="../10-server-actions/index.html">← 上一章：Server Actions</a>
+  <a href="../12-styling/index.html">下一章：样式方案 →</a>
+</div>
+
+</div>
+</body>
+</html>

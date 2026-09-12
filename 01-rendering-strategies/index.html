@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 · 渲染策略：CSR / SSR / SSG / ISR — Next.js 教程</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #fff;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .container { max-width: 880px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  nav { margin-bottom: 40px; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  nav span { color: #999; margin: 0 8px; }
+
+  h1 { font-size: 2.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px; }
+  .chap-label { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .intro { color: var(--text-secondary); font-size: 1.05rem; margin: 12px 0 40px; max-width: 660px; }
+
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 52px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 32px 0 10px; }
+  h4 { font-size: 1rem; font-weight: 600; margin: 22px 0 8px; color: #333; }
+
+  p { margin-bottom: 14px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; }
+
+  .code-block {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin: 14px 0 18px;
+    overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+  .code-block .kw { color: #569cd6; }
+  .code-block .fn { color: #dcdcaa; }
+  .code-block .str { color: #ce9178; }
+  .code-block .cmt { color: #6a9955; }
+  .code-block .tag { color: #4ec9b0; }
+  .code-block .hl { color: #ffd479; }
+
+  .illustration {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin: 22px 0;
+    overflow-x: auto;
+  }
+  .illustration pre { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.85rem; line-height: 1.75; color: #333; }
+
+  .callout {
+    background: #fff8e1; border-left: 3px solid #f0b400;
+    padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 20px 0;
+    font-size: 0.93rem;
+  }
+  .callout.info { background: #e8f4fd; border-left-color: var(--accent); }
+  .callout.danger { background: #fdecec; border-left-color: #e5484d; }
+
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 22px; font-size: 0.9rem; }
+  th { background: #f5f5f5; text-align: left; padding: 10px 12px; border: 1px solid var(--border); font-weight: 600; }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+  .table-wrap { overflow-x: auto; }
+
+  .mode-badge {
+    display: inline-block; font-size: 0.72rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px;
+    vertical-align: middle; margin-left: 8px;
+  }
+  .b-csr { background: #fff0e6; color: #c2410c; }
+  .b-ssr { background: #e6f0ff; color: #0b5ed7; }
+  .b-ssg { background: #e7f8ee; color: #157347; }
+  .b-isr { background: #f3e9ff; color: #7a3fc4; }
+
+  .nav-bottom { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; }
+  .nav-bottom a { color: var(--accent); text-decoration: none; font-weight: 500; }
+
+  .demo-link {
+    display: block; background: #f6f8fa; border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; margin: 14px 0 20px;
+    font-size: 0.9rem; color: var(--text-secondary);
+  }
+  .demo-link strong { color: var(--text); }
+  .demo-link code { background: #e8ecf0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav>
+  <a href="../index.html">教程首页</a><span>/</span>01 · 渲染策略
+</nav>
+
+<div class="chap-label">第一章</div>
+<h1>渲染策略：CSR / SSR / SSG / ISR</h1>
+<p class="intro">
+  Next.js 的所有特性，最终都在回答同一个问题：<strong>这段 HTML 是在哪里、什么时候生成的？</strong>
+  弄懂这件事，后面的服务端组件、数据获取、缓存策略才有立足点。所以这一章放在最前面。
+</p>
+
+<div class="callout info" style="margin-bottom:32px;">
+  <strong>配套可运行代码：</strong>本章四个模式都有真实可跑的页面，在 <code>demo/</code> 项目里。
+  执行 <code>npm install &amp;&amp; npm run dev</code> 后访问
+  <code>http://localhost:3000/rendering-strategies</code>，
+  每个模式页面上都会显示「本次 HTML 的生成时间」——反复刷新，时间戳的变化规律就是它们的区别。
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2>1. 先建立一个概念：渲染 = 生成 HTML</h2>
+
+<p>浏览器需要 HTML 才能显示页面。但「HTML 从哪来」有好几种答案，这就是渲染策略。</p>
+
+<p>举一个具体的例子。假设页面上要显示一段实时数据：</p>
+
+<div class="code-block">
+<pre>
+<span class="tag">&lt;p&gt;</span>当前时间：{now}<span class="tag">&lt;/p&gt;</span>
+</pre>
+</div>
+
+<p>这个 <code>{now}</code> 究竟是什么时候被替换成真实时间的？四种答案对应四种策略：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th style="width:15%;">策略</th>
+      <th style="width:29%;">HTML 生成于</th>
+      <th>一句话解释</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="mode-badge b-csr">CSR</span></td>
+      <td>用户的浏览器里</td>
+      <td>服务器只发一个空壳，时间由浏览器里的 JS 填进去</td>
+    </tr>
+    <tr>
+      <td><span class="mode-badge b-ssr">SSR</span></td>
+      <td>每次请求时的服务器上</td>
+      <td>服务器现取现算，每个访客都拿到刚出炉的完整 HTML</td>
+    </tr>
+    <tr>
+      <td><span class="mode-badge b-ssg">SSG</span></td>
+      <td>构建时的服务器上</td>
+      <td>打包时就生成好一份 HTML 存着，之后谁访问都发这一份</td>
+    </tr>
+    <tr>
+      <td><span class="mode-badge b-isr">ISR</span></td>
+      <td>构建时 + 之后定时再生</td>
+      <td>本质是 SSG，但隔一段时间偷偷更新一次那份 HTML</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>注意这四个缩写里有三个是「服务器端」（SSR / SSG / ISR），只有一个在客户端（CSR）。
+这就是为什么 Next.js 被称作「服务端渲染框架」——它默认在服务器上生成 HTML，
+而不是像早期的纯 React 单页应用那样把渲染工作全丢给浏览器。</p>
+
+<!-- ==================== 2 ==================== -->
+<h2>2. 四种策略逐个拆解</h2>
+
+<h3>CSR — 客户端渲染<span class="mode-badge b-csr">CSR</span></h3>
+
+<p>服务器返回的 HTML 几乎是空的，真正的内存在浏览器里由 JavaScript 生成。经典的
+React 单页应用（SPA）走的就是这条路。</p>
+
+<div class="illustration">
+<pre>
+浏览器                        服务器
+  │ 请求页面                    │
+  ├───────────────────────────► │
+  │ ◄──────── 空壳 HTML + JS ───┤   ① 拿到的 HTML 里没有内容
+  │                             │
+  │  ② 下载并执行 JS            │
+  │  ③ JS 再发一次数据请求       │
+  ├───────────────────────────► │
+  │ ◄────────────────── 数据 ───┤
+  │  ④ 这才渲染出内容            │
+</pre>
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/rendering-strategies/csr/page.tsx</span>
+<span class="hl">"use client"</span>   <span class="cmt">// 必须声明为客户端组件，因为要用浏览器里的 useEffect</span>
+
+<span class="kw">import</span> { useEffect, useState } <span class="kw">from</span> <span class="str">"react"</span>
+
+<span class="kw">export default function</span> <span class="fn">CsrPage</span>() {
+  <span class="kw">const</span> [now, setNow] = useState&lt;<span class="kw">string</span> | <span class="kw">null</span>&gt;(<span class="kw">null</span>)
+
+  useEffect(() =&gt; {
+    <span class="cmt">// 这段代码只在浏览器里执行，所以时间永远是最新的</span>
+    setNow(<span class="kw">new</span> <span class="fn">Date</span>().<span class="fn">toLocaleString</span>())
+  }, [])
+
+  <span class="kw">return</span> <span class="tag">&lt;p&gt;</span>当前时间：{now ?? <span class="str">"加载中…"</span>}<span class="tag">&lt;/p&gt;</span>
+}
+</pre>
+</div>
+
+<p><strong>优点</strong>：服务器几乎不干活，首屏之后的一切交互都在本地完成，页面之间切换极快。<br>
+<strong>缺点</strong>：首屏要等 JS 下载执行完；搜索引擎拿到的是一份空壳，对 SEO 不利；低端设备上慢。</p>
+
+<p><strong>什么时候用</strong>：后台管理系统、需要大量本地交互的应用——这类页面不需要被搜索引擎收录，
+用户也不介意多等一小会儿。</p>
+
+<h3>SSR — 服务端渲染<span class="mode-badge b-ssr">SSR</span></h3>
+
+<p>每次有请求进来，服务器都现场取数据、现场把 HTML 拼好，再发给浏览器。浏览器拿到的是
+一份可以直接显示的完整 HTML。</p>
+
+<div class="illustration">
+<pre>
+浏览器                        服务器
+  │ 请求页面                    │
+  ├───────────────────────────► │  ① 取数据
+  │                             │  ② 用数据渲染出完整 HTML
+  │ ◄──────── 完整 HTML ────────┤
+  │  ③ 立刻就能看到内容          │
+</pre>
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/rendering-strategies/ssr/page.tsx</span>
+<span class="hl">export const dynamic = "force-dynamic"</span>   <span class="cmt">// 强制每次请求都重新渲染</span>
+
+<span class="kw">export default async function</span> <span class="fn">SsrPage</span>() {
+  <span class="cmt">// 这行代码在服务器上运行，每次请求都会重新执行</span>
+  <span class="kw">const</span> now = <span class="kw">new</span> <span class="fn">Date</span>().<span class="fn">toLocaleString</span>()
+
+  <span class="kw">return</span> <span class="tag">&lt;p&gt;</span>当前时间：{now}<span class="tag">&lt;/p&gt;</span>
+}
+</pre>
+</div>
+
+<p><strong>优点</strong>：首屏快（内容已经在 HTML 里）；SEO 友好；每次都是最新数据。<br>
+<strong>缺点</strong>：每次请求都要占用服务器算力。流量大时这是真金白银的成本。</p>
+
+<p><strong>什么时候用</strong>：内容需要实时或因人而异。比如「你当前的购物车」「登录用户的个人信息」。</p>
+
+<div class="callout">
+  <strong>术语提醒：</strong>在 App Router 的官方文档里，SSR 这个模式通常被称作
+  <strong>动态渲染（Dynamic Rendering）</strong>。名字变了，本质还是传统的服务端渲染。
+  叫它 SSR 完全没问题，本章为了跟 SSG / ISR 放在一起对比，统一用 SSR 这个叫法。
+</div>
+
+<h3>SSG — 静态站点生成<span class="mode-badge b-ssg">SSG</span></h3>
+
+<p>在建站的时候（<code>next build</code> 那一刻）就把 HTML 生成好，存成文件。
+之后不管谁来访问，直接把这份现成的文件发出去。对服务器来说，这几乎不消耗算力。</p>
+
+<div class="illustration">
+<pre>
+【构建时·只发生一次】
+build  ──► 取数据 ──► 生成 page.html 存进产物里
+
+【运行时·每次请求】
+浏览器 ──► 服务器 ──► 直接返回那份 page.html（不重新渲染）
+
+     结果：时间永远停在构建那一刻
+</pre>
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/rendering-strategies/ssg/page.tsx</span>
+<span class="cmt">// 什么都不用写——这就是 App Router 的默认行为</span>
+
+<span class="kw">export default function</span> <span class="fn">SsgPage</span>() {
+  <span class="cmt">// 这行代码只在构建时执行一次，之后结果被固化成静态 HTML</span>
+  <span class="kw">const</span> now = <span class="kw">new</span> <span class="fn">Date</span>().<span class="fn">toLocaleString</span>()
+
+  <span class="kw">return</span> <span class="tag">&lt;p&gt;</span>当前时间：{now}<span class="tag">&lt;/p&gt;</span>
+}
+</pre>
+</div>
+
+<p><strong>优点</strong>：最快（几乎是纯静态文件服务），服务器压力最小，还能直接部署到 CDN 上。<br>
+<strong>缺点</strong>：数据是死的。想更新内容就得重新构建、重新部署。</p>
+
+<p><strong>什么时候用</strong>：博客文章、产品文档、营销落地页——这类内容不常变，但访问量可能很大。</p>
+
+<div class="callout">
+  <strong>这是 Next.js 的默认档位。</strong>你写一个普通的页面，只要它没有用到任何
+  「跟本次请求有关」的东西（后面会讲具体是哪些），Next.js 就会在构建时把它变成静态 HTML。
+  你什么都不做，就已经在用 SSG 了。
+</div>
+
+<h3>ISR — 增量静态再生<span class="mode-badge b-isr">ISR</span></h3>
+
+<p>ISR 是 SSG 和 SSR 的折中。页面仍然是静态生成的，但你可以指定一个「保质期」：
+过了这段时间，下一个来访问的人会先看到旧页面，同时服务器在后台悄悄重新生成一份新的。</p>
+
+<div class="illustration">
+<pre>
+build   ──► 生成 HTML v1（存起来）
+
+t = 0s   有人访问 ──► 直接返回 v1
+t = 3s   有人访问 ──► 直接返回 v1        ┐
+t = 9s   有人访问 ──► 直接返回 v1        ┘ 保质期内，都用旧的那份
+
+t = 12s  有人访问 ──► 先返回 v1（旧的）    ← 不等待
+                        └─► 后台重新生成 v2
+
+t = 13s  有人访问 ──► 返回 v2（新的）
+</pre>
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/rendering-strategies/isr/page.tsx</span>
+<span class="hl">export const revalidate = 10</span>   <span class="cmt">// 单位：秒。每 10 秒允许再生一次</span>
+
+<span class="kw">export default function</span> <span class="fn">IsrPage</span>() {
+  <span class="kw">const</span> now = <span class="kw">new</span> <span class="fn">Date</span>().<span class="fn">toLocaleString</span>()
+
+  <span class="kw">return</span> <span class="tag">&lt;p&gt;</span>当前时间：{now}<span class="tag">&lt;/p&gt;</span>
+}
+</pre>
+</div>
+
+<p><strong>优点</strong>：享受静态页面的速度，同时数据不会永远停在构建那一刻。<br>
+<strong>缺点</strong>：数据有延迟，最多滞后 <code>revalidate</code> 秒。不适合毫秒级要求。</p>
+
+<p><strong>什么时候用</strong>：文章列表、商品列表、新闻首页——数量庞大、不常变、但终究会变的内容。
+一个百万篇文章的博客，用 ISR 就永远不需要为了发一篇文章而重新构建全站。</p>
+
+<!-- ==================== 3 ==================== -->
+<h2>3. 横向对比</h2>
+
+<p>把四个模式摊开放在一起看。这张表建议背下来，后面遇到任何「该用哪种」的问题都能回来查。</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th style="width:20%;">对比项</th>
+      <th><span class="mode-badge b-csr">CSR</span></th>
+      <th><span class="mode-badge b-ssr">SSR</span></th>
+      <th><span class="mode-badge b-ssg">SSG</span></th>
+      <th><span class="mode-badge b-isr">ISR</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>HTML 生成时机</strong></td>
+      <td>浏览器运行时</td>
+      <td>每次请求</td>
+      <td>构建时一次</td>
+      <td>构建时 + 定时再生</td>
+    </tr>
+    <tr>
+      <td><strong>数据新鲜度</strong></td>
+      <td>总是最新</td>
+      <td>总是最新</td>
+      <td>构建那刻的快照</td>
+      <td>最多滞后 revalidate 秒</td>
+    </tr>
+    <tr>
+      <td><strong>首屏速度</strong></td>
+      <td>慢（要等 JS）</td>
+      <td>快</td>
+      <td>最快</td>
+      <td>最快</td>
+    </tr>
+    <tr>
+      <td><strong>服务器成本</strong></td>
+      <td>最低</td>
+      <td>最高</td>
+      <td>最低</td>
+      <td>很低</td>
+    </tr>
+    <tr>
+      <td><strong>SEO</strong></td>
+      <td>差</td>
+      <td>好</td>
+      <td>好</td>
+      <td>好</td>
+    </tr>
+    <tr>
+      <td><strong>能否上 CDN</strong></td>
+      <td>可以</td>
+      <td>通常不行</td>
+      <td>可以</td>
+      <td>可以</td>
+    </tr>
+    <tr>
+      <td><strong>每个用户看到的内容</strong></td>
+      <td>各自不同</td>
+      <td>可能不同</td>
+      <td>完全相同</td>
+      <td>一段时间内相同</td>
+    </tr>
+    <tr>
+      <td><strong>典型场景</strong></td>
+      <td>后台管理系统</td>
+      <td>购物车、个人中心</td>
+      <td>博客、文档、营销页</td>
+      <td>商品列表、新闻首页</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>怎么选？一条决策路径</h3>
+
+<ol>
+  <li><strong>这个页面需要被搜索引擎收录吗？</strong>不需要，且交互很重 → 直接选 <strong>CSR</strong>，别纠结。</li>
+  <li><strong>内容是否因人而异、或必须实时？</strong>是 → 选 <strong>SSR</strong>（同一份 HTML 给所有人就没意义了）。</li>
+  <li><strong>内容对所有访客都一样，且变化不频繁？</strong>是 → 选 <strong>SSG</strong>，这是最省钱的方案。</li>
+  <li><strong>内容不常变，但偶尔需要更新，且页面数量很大？</strong>是 → 选 <strong>ISR</strong>，避免为了改一点内容重建全站。</li>
+</ol>
+
+<!-- ==================== 4 ==================== -->
+<h2>4. Next.js 怎么替你决定？</h2>
+
+<p>关键的一点：<strong>在 App Router 里，你通常不需要手动选</strong>。Next.js 会看你的代码，
+自动推断这个页面能不能静态化。</p>
+
+<h3>默认是静态的</h3>
+
+<p>只要你写的是普通页面，没有用到下面这些「跟请求有关」的能力，Next.js 就在构建时把它静态化（SSG）：</p>
+
+<ul>
+  <li><code>cookies()</code> — 读取 cookie，因人而异</li>
+  <li><code>headers()</code> — 读取请求头</li>
+  <li>页面的 <code>searchParams</code> — 同一路径带不同查询参数</li>
+  <li>在 <code>fetch()</code> 里写了 <code>cache: "no-store"</code></li>
+</ul>
+
+<p>一旦用了其中任何一个，这个页面就「不可能在构建时算出来」，于是自动转为
+<strong>动态渲染</strong>（也就是 SSR）。</p>
+
+<h3>需要时可以强制</h3>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// 强制动态渲染（SSR）：每次请求都重新生成</span>
+<span class="kw">export const</span> dynamic = <span class="str">"force-dynamic"</span>
+
+<span class="cmt">// 强制静态渲染（SSG）：即使代码里有动态能力也坚持静态化</span>
+<span class="kw">export const</span> dynamic = <span class="str">"force-static"</span>
+
+<span class="cmt">// 开启 ISR：每 N 秒允许再生一次</span>
+<span class="kw">export const</span> revalidate = <span class="str">10</span>
+</pre>
+</div>
+
+<p>这三行叫<strong>路由段配置（Route Segment Config）</strong>，写在 <code>page.tsx</code> 或
+<code>layout.tsx</code> 的顶层，跟组件并列。</p>
+
+<div class="callout info">
+  <strong>怎么知道某个页面最终是静态还是动态？</strong>跑一次 <code>npm run build</code>，
+  构建输出里会逐个列出路由，并在右边标注 <code>○ (Static)</code> 或 <code>ƒ (Dynamic)</code>。
+  这是最权威的答案——框架怎么想的不重要，它实际做了什么才重要。
+</div>
+
+<!-- ==================== 5 ==================== -->
+<h2>5. 去 demo 里亲手验证</h2>
+
+<p>概念讲完了，但「时间戳会不会变」这件事，看一眼比读十遍强。打开 demo 里的这四个页面：</p>
+
+<div class="callout info">
+  <strong>实验步骤：</strong>依次打开下面四个页面，每个页面都<strong>连续刷新几次</strong>，
+  盯着页面上显示的那个「HTML 生成时间」看。
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:34%;">页面</th><th>刷新后时间戳的表现</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>/rendering-strategies/csr</code></td>
+      <td>会变，而且能看到一瞬间的「加载中」——因为内容是浏览器拿到 JS 之后才填的</td>
+    </tr>
+    <tr>
+      <td><code>/rendering-strategies/ssr</code></td>
+      <td>每次刷新都变——服务器每次请求都重新渲染了一遍</td>
+    </tr>
+    <tr>
+      <td><code>/rendering-strategies/ssg</code></td>
+      <td>永远不变，固定在构建那一刻——这个时间戳是「烤」进 HTML 里的</td>
+    </tr>
+    <tr>
+      <td><code>/rendering-strategies/isr</code></td>
+      <td>10 秒内不变，超过 10 秒后第一次刷新仍是旧值，再刷一次才更新</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+  <strong>ISR 那个「再刷一次才更新」不是 bug。</strong>这正是 ISR 的设计：
+  过期后的第一个访客拿到的是旧页面（保证速度），服务器在后台同时生成新版本，
+  下一个访客才看到新内容。这个过程叫「后台再生」（stale-while-revalidate）。
+</div>
+
+<div class="callout danger">
+  <strong>一个容易踩的坑：</strong>如果你改了代码想看 SSG 时间戳变化，光刷新浏览器是没用的，
+  必须重新 <code>npm run build &amp;&amp; npm start</code>。因为静态 HTML 是构建产物，构建不重跑，
+  它永远停在旧的时间上。用 <code>npm run dev</code> 时行为会有所不同——开发模式为了热更新，
+  每次请求都重新渲染，所以 SSG 在 dev 下看起来「每次都在变」，这是正常的，
+  以 <code>build + start</code> 的结果为准。
+</div>
+
+<!-- ==================== 6 ==================== -->
+<h2>6. 小结</h2>
+
+<ul>
+  <li>渲染策略回答的是「HTML 在哪、何时生成」。</li>
+  <li><strong>CSR</strong> 在浏览器生成——快在交互，慢在首屏，不利于 SEO。</li>
+  <li><strong>SSR</strong> 每次请求在服务器生成——最新，但吃服务器资源。</li>
+  <li><strong>SSG</strong> 构建时生成一次——最快最省，但内容是死的。</li>
+  <li><strong>ISR</strong> 是 SSG 加上保质期——静态的速度，可接受的延迟。</li>
+  <li>App Router 默认静态化，用到 <code>cookies()</code>、<code>headers()</code>、<code>searchParams</code>
+      这类请求相关能力时自动转为动态。</li>
+  <li>用 <code>build</code> 输出的 <code>○ / ƒ</code> 标记来确认实际结果。</li>
+</ul>
+
+<p>下一章开始讲路由——先有页面，才有「这个页面该怎么渲染」的问题。</p>
+
+<div class="nav-bottom">
+  <a href="../index.html">← 教程首页</a>
+  <a href="../02-routing-basics/index.html">下一章：路由基础 →</a>
+</div>
+
+</div>
+</body>
+</html>

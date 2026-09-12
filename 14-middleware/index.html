@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14 · 中间件（proxy.ts）— Next.js 教程</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #fff;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .container { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  nav { margin-bottom: 40px; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  nav span { color: #999; margin: 0 8px; }
+
+  h1 { font-size: 2.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px; }
+  .chap-label { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .intro { color: var(--text-secondary); font-size: 1.05rem; margin: 12px 0 40px; max-width: 660px; }
+
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 50px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 32px 0 10px; }
+
+  p { margin-bottom: 14px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; }
+
+  .code-block {
+    background: #1e1e1e; color: #d4d4d4; border-radius: 8px;
+    padding: 18px 22px; margin: 14px 0 18px; overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85rem; line-height: 1.7;
+  }
+  .code-block .kw { color: #569cd6; }
+  .code-block .fn { color: #dcdcaa; }
+  .code-block .str { color: #ce9178; }
+  .code-block .cmt { color: #6a9955; }
+  .code-block .tag { color: #4ec9b0; }
+  .code-block .hl { color: #ffd479; }
+
+  .illustration {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px 28px; margin: 22px 0; overflow-x: auto;
+  }
+  .illustration pre { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.85rem; line-height: 1.75; color: #333; }
+
+  .callout { background: #fff8e1; border-left: 3px solid #f0b400; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 20px 0; font-size: 0.93rem; }
+  .callout.info { background: #e8f4fd; border-left-color: var(--accent); }
+  .callout.danger { background: #fdecec; border-left-color: #e5484d; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 22px; font-size: 0.9rem; }
+  th { background: #f5f5f5; text-align: left; padding: 10px 12px; border: 1px solid var(--border); font-weight: 600; }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+
+  .nav-bottom { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; }
+  .nav-bottom a { color: var(--accent); text-decoration: none; font-weight: 500; }
+
+  .finish {
+    margin-top: 60px; padding: 28px 30px; border-radius: 12px;
+    background: linear-gradient(135deg, #eaf3ff, #f6f9ff);
+    border: 1px solid #d6e6fb;
+  }
+  .finish h2 { margin-top: 0; border: none; padding-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav>
+  <a href="../index.html">教程首页</a><span>/</span>14 · 中间件
+</nav>
+
+<div class="chap-label">第十四章</div>
+<h1>中间件（proxy.ts）</h1>
+<p class="intro">
+  前面十三章讲的是「请求到达页面之后」发生的事。中间件给你一个机会，
+  在<strong>请求还没到页面之前</strong>就做出决定：放行、改写、还是直接送走。
+</p>
+
+<div class="callout info" style="margin-bottom:24px;">
+  <strong>配套可运行代码：</strong>本章在 demo 的 <code>/middleware</code> 路由下，
+  中间件本体是 <code>demo/proxy.ts</code>。
+  执行 <code>npm install &amp;&amp; npm run dev</code> 后访问
+  <code>http://localhost:3000/middleware</code>。
+</div>
+
+<div class="callout danger">
+  <strong>先说明一个命名变化，否则你会以为走错了章节。</strong>
+  <br /><br />
+  Next.js 16 把这个约定文件从 <code>middleware.ts</code> 改名成了{" "}
+  <code>proxy.ts</code>，导出的函数也从 <code>middleware</code> 改成了{" "}
+  <code>proxy</code>。功能完全一样，官方只是认为 "proxy"（代理）
+  更能准确表达它的本质。
+  <ul style="margin:10px 0 0 20px;">
+    <li>Next.js 15 及以前：文件 <code>middleware.ts</code>，
+        函数 <code>export function middleware()</code></li>
+    <li>Next.js 16 起：文件 <code>proxy.ts</code>，
+        函数 <code>export function proxy()</code></li>
+  </ul>
+  <p style="margin:10px 0 0;">
+    旧项目里的 <code>middleware.ts</code> 和新项目里的 <code>proxy.ts</code>{" "}
+    是同一个东西，社区里仍然普遍称它为「中间件」。
+    本 demo 用的是 Next.js 16，所以文件是 <code>proxy.ts</code>。
+    官方也提供了自动迁移命令：<code>npx @next/codemod@canary middleware-to-proxy .</code>
+  </p>
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2>1. 它在哪里执行</h2>
+
+<div class="illustration">
+<pre>
+浏览器请求
+   │
+   ▼
+┌──────────────────┐
+│   proxy.ts       │  ← 在这里。页面还没开始渲染
+└──────────────────┘
+   │
+   ├─ 返回 redirect  → 浏览器直接改地址，页面完全不执行
+   ├─ 返回 rewrite   → 内部换成另一个页面，URL 不变
+   ├─ 返回响应       → 直接结束，不发页面
+   └─ NextResponse.next() → 放行，继续走正常流程
+                             │
+                             ▼
+                      layout → page → 渲染
+</pre>
+</div>
+
+<p>文件位置有讲究：<strong>必须放在项目根目录</strong>
+（本 demo 是 <code>demo/proxy.ts</code>），
+<strong>不是</strong>放在 <code>app/</code> 里面。因为它管的是「整个应用」这一层。</p>
+
+<!-- ==================== 2 ==================== -->
+<h2>2. 三个最常见的场景</h2>
+
+<h3>① 旧地址迁移</h3>
+
+<div class="code-block">
+<pre>
+<span class="kw">import</span> { NextResponse, <span class="kw">type</span> NextRequest } <span class="kw">from</span> <span class="str">"next/server"</span>
+
+<span class="kw">export function</span> <span class="fn">proxy</span>(request: NextRequest) {
+  <span class="kw">if</span> (request.nextUrl.pathname === <span class="str">"/old-path"</span>) {
+    <span class="hl">return NextResponse.redirect(new URL("/new-path", request.url))</span>
+  }
+}
+</pre>
+</div>
+
+<p>网站改版、栏目改名之后，旧链接可能已被搜索引擎收录、被用户收藏。
+在中间件里做一层映射，既保住流量，也不用为每个旧地址留一个页面文件。</p>
+
+<h3>② 访问保护（鉴权初筛）</h3>
+
+<div class="code-block">
+<pre>
+<span class="kw">if</span> (pathname.<span class="fn">startsWith</span>(<span class="str">"/dashboard"</span>)) {
+  <span class="kw">const</span> token = request.cookies.<span class="fn">get</span>(<span class="str">"session"</span>)
+
+  <span class="kw">if</span> (!token) {
+    <span class="hl">return NextResponse.redirect(new URL("/login", request.url))</span>
+  }
+}
+</pre>
+</div>
+
+<p>这样「没登录就别进来」只写一处，而不是每个受保护页面都抄一遍判断。</p>
+
+<h3>③ 注入请求头 / 响应头</h3>
+
+<div class="code-block">
+<pre>
+<span class="hl">const requestHeaders = new Headers(request.headers)</span>
+requestHeaders.<span class="fn">set</span>(<span class="str">"x-user-region"</span>, region)
+
+<span class="kw">const</span> response = NextResponse.<span class="fn">next</span>({
+  request: { headers: requestHeaders },   <span class="cmt">// 传给后面的页面</span>
+})
+response.headers.<span class="fn">set</span>(<span class="str">"x-cache"</span>, <span class="str">"miss"</span>)   <span class="cmt">// 放进响应头</span>
+<span class="kw">return</span> response
+</pre>
+</div>
+
+<div class="callout danger">
+  <strong>这里有个很容易搞错的细节：请求头和响应头是两回事。</strong>
+  <br /><br />
+  · 只有改 <code>request</code> 头，页面里的 <code>headers()</code> 才读得到。<br />
+  · 只改 <code>response</code> 头，页面读不到，但浏览器和网络面板能看到。
+  <br /><br />
+  想让页面用上中间件传的值，必须走 <code>NextResponse.next(&#123; request: ... &#125;)</code>。
+</div>
+
+<!-- ==================== 3 ==================== -->
+<h2>3. matcher：一定要限定范围</h2>
+
+<div class="callout danger">
+  <strong>不写 <code>matcher</code>，中间件会对每一个请求运行——包括图片、字体、JS 文件。</strong>
+  <br /><br />
+  这既拖慢性能，也容易出意外（比如把静态资源也重定向了，
+  结果 CSS 加载不出来、页面样式全乱）。
+</div>
+
+<div class="code-block">
+<pre>
+<span class="kw">export const</span> config = {
+  <span class="hl">matcher: ["/dashboard/:path*"]</span>,   <span class="cmt">// 只管这个范围</span>
+}
+</pre>
+</div>
+
+<p><code>:path*</code> 里的 <code>*</code> 表示「零段或多段」，所以这个 matcher
+同时覆盖 <code>/dashboard</code> 和 <code>/dashboard/anything/deep</code>。</p>
+
+<p>本 demo 就是靠它把中间件限制在 <code>/middleware/*</code>，
+这样其它十三章的页面完全不受影响——你在学中间件的时候，
+前面的例子不会突然开始跳转。</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// 常见写法：排除静态资源</span>
+<span class="kw">export const</span> config = {
+  matcher: [<span class="str">"/((?!_next/static|_next/image|favicon.ico).*)"</span>],
+}
+</pre>
+</div>
+
+<!-- ==================== 4 ==================== -->
+<h2>4. 两条必须知道的限制</h2>
+
+<h3>限制一：它跑在每个请求上</h3>
+
+<p>中间件是在页面渲染<strong>之前</strong>执行的，而且每个匹配到的请求都要跑一遍。
+它慢 50ms，整个站点就慢 50ms。所以：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:50%;">适合放这里</th><th>不适合放这里</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>重定向、改写 URL</td>
+      <td>查数据库、调外部接口</td>
+    </tr>
+    <tr>
+      <td>「有没有 cookie」这种快速判断</td>
+      <td>「这个用户能不能编辑这篇文章」这种需要查数据的判断</td>
+    </tr>
+    <tr>
+      <td>加请求头 / 响应头</td>
+      <td>业务逻辑（应该在 Server Actions 或接口里）</td>
+    </tr>
+    <tr>
+      <td>A/B 分流、地区或语言跳转</td>
+      <td>任何耗时超过几十毫秒的操作</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>限制二：运行在 Edge 运行时</h3>
+
+<div class="callout">
+  <strong>中间件默认跑在 Edge 运行时，不是完整的 Node.js 环境。</strong>
+  它启动快、离用户近，但很多 Node 专有模块（<code>fs</code>、
+  一些数据库驱动）用不了。
+  <br /><br />
+  这也正是设计意图：逼着你保持中间件轻量。
+  需要完整 Node 能力的逻辑，应该放到页面、Server Actions 或接口里。
+</div>
+
+<!-- ==================== 5 ==================== -->
+<h2>5. 鉴权该放中间件还是页面里？</h2>
+
+<p>一个常见的困惑。答案是<strong>两处都要，但职责不同</strong>：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:26%;">位置</th><th>负责</th><th>例子</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>中间件</strong></td>
+      <td>快速初筛：有没有凭证</td>
+      <td>没有 cookie → 直接跳登录页</td>
+    </tr>
+    <tr>
+      <td><strong>页面 / 数据层</strong></td>
+      <td>真正的授权判断</td>
+      <td>这个用户是不是这篇文章的作者？</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout danger">
+  <strong>不要在中间件里做完整的权限校验。</strong>
+  那需要查数据库，而中间件在每个请求上都跑、又跑在 Edge 环境——
+  既慢又受限。
+  <br /><br />
+  更重要的是：<strong>中间件不能当作唯一的安全边界</strong>。
+  真正的授权检查必须在数据操作的那一层做，
+  否则一个没被 matcher 覆盖到的路径就会绕过它。
+</div>
+
+<!-- ==================== 6 ==================== -->
+<h2>6. 代码示例与 demo 对照</h2>
+
+<div class="callout info">
+  <strong>本章 demo 路径：</strong>
+  <ul style="margin:8px 0 0 20px;">
+    <li>中间件本体 → <code>demo/proxy.ts</code></li>
+    <li>总览页（读中间件传的头）→ <code>demo/app/middleware/page.tsx</code></li>
+    <li>重定向目标 → <code>demo/app/middleware/new/page.tsx</code></li>
+    <li>受保护的页面 → <code>demo/app/middleware/protected/page.tsx</code></li>
+    <li>模拟登录接口 → <code>demo/app/middleware/auth/route.ts</code></li>
+  </ul>
+</div>
+
+<div class="callout">
+  <strong>动手验证三步：</strong>
+  <ol style="margin:8px 0 0 20px;">
+    <li>打开 <code>/middleware</code>，看到页面显示了
+        <code>x-demo-middleware</code> 这个头——证明中间件运行过。
+        再去 Network 面板确认响应头里也有它。</li>
+    <li>点「旧地址」链接（<code>/middleware/old</code>），
+        你会落到 <code>/middleware/new</code>，而旧地址在项目里并不存在。</li>
+    <li>先点「登录」，再访问受保护页面——能进。
+        然后在开发者工具里删掉 <code>demo-token</code> cookie 并刷新，
+        立刻被送回总览页。</li>
+  </ol>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<h2>7. 小结</h2>
+
+<ul>
+  <li>约定文件放在<strong>项目根目录</strong>，在请求到达页面前执行。
+      Next.js 16 起叫 <code>proxy.ts</code>（以前叫 <code>middleware.ts</code>）。</li>
+  <li>四种出口：放行（<code>next()</code>）、重定向、改写、直接返回响应。</li>
+  <li>常用场景：旧地址迁移、鉴权初筛、注入请求头、A/B 分流。</li>
+  <li><strong>务必写 <code>matcher</code> 限定范围</strong>，否则静态资源也会被处理。</li>
+  <li>改<strong>请求头</strong>才能让页面读到；改响应头只有浏览器能看到。</li>
+  <li>它跑在每个请求上，且运行在 Edge 运行时——<strong>必须保持轻量</strong>。</li>
+  <li>中间件只做快速初筛，真正的授权判断要放在数据层。</li>
+</ul>
+
+<div class="finish">
+  <h2>教程到这里就结束了</h2>
+  <p>
+    十四章走下来，你应该已经建立了这样一条线索：
+  </p>
+  <ul>
+    <li><strong>第一章</strong>确定了「HTML 在哪生成」这个地基——CSR / SSR / SSG / ISR；</li>
+    <li><strong>第二、三章</strong>讲清了页面是怎么被文件夹结构组织起来的；</li>
+    <li><strong>第四到六章</strong>解决了「代码跑在哪、数据从哪来、URL 怎么变化」；</li>
+    <li><strong>第七、八章</strong>补齐了用户体验：加载、出错、跳转；</li>
+    <li><strong>第九到十一章</strong>是数据写回、对外接口和搜索引擎可见性；</li>
+    <li><strong>第十二到十四章</strong>是工程化的收尾：样式、资源、全局拦截。</li>
+  </ul>
+  <p style="margin-bottom: 0;">
+    所有代码都在 <code>demo/</code> 项目里，每个页面都有可操作的验证步骤。
+    建议的学习顺序是：读一章 HTML，去 demo 里点一遍，
+    然后回到自己的项目里用一次。
+  </p>
+</div>
+
+<div class="nav-bottom">
+  <a href="../13-images-and-fonts/index.html">← 上一章：图片与字体优化</a>
+  <a href="../index.html">回到教程首页 →</a>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08 · 导航与路由感知 — Next.js 教程</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #fff;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .container { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  nav { margin-bottom: 40px; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  nav span { color: #999; margin: 0 8px; }
+
+  h1 { font-size: 2.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px; }
+  .chap-label { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .intro { color: var(--text-secondary); font-size: 1.05rem; margin: 12px 0 40px; max-width: 660px; }
+
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 50px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 32px 0 10px; }
+
+  p { margin-bottom: 14px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; }
+
+  .code-block {
+    background: #1e1e1e; color: #d4d4d4; border-radius: 8px;
+    padding: 18px 22px; margin: 14px 0 18px; overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85rem; line-height: 1.7;
+  }
+  .code-block .kw { color: #569cd6; }
+  .code-block .fn { color: #dcdcaa; }
+  .code-block .str { color: #ce9178; }
+  .code-block .cmt { color: #6a9955; }
+  .code-block .tag { color: #4ec9b0; }
+  .code-block .hl { color: #ffd479; }
+
+  .illustration {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px 28px; margin: 22px 0; overflow-x: auto;
+  }
+  .illustration pre { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.85rem; line-height: 1.75; color: #333; }
+
+  .callout { background: #fff8e1; border-left: 3px solid #f0b400; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 20px 0; font-size: 0.93rem; }
+  .callout.info { background: #e8f4fd; border-left-color: var(--accent); }
+  .callout.danger { background: #fdecec; border-left-color: #e5484d; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 22px; font-size: 0.9rem; }
+  th { background: #f5f5f5; text-align: left; padding: 10px 12px; border: 1px solid var(--border); font-weight: 600; }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+
+  .nav-bottom { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; }
+  .nav-bottom a { color: var(--accent); text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav>
+  <a href="../index.html">教程首页</a><span>/</span>08 · 导航与路由感知
+</nav>
+
+<div class="chap-label">第八章</div>
+<h1>导航与路由感知</h1>
+<p class="intro">
+  页面之间怎么跳、跳的时候怎么不丢状态、以及「怎么知道我现在在哪个路由上」。
+  这三件事在 Next.js 里都有专门的工具，而且都来自同一个模块：
+  <code>next/navigation</code>。
+</p>
+
+<div class="callout info" style="margin-bottom:32px;">
+  <strong>配套可运行代码：</strong>本章在 demo 的 <code>/navigation</code> 路由下。
+  执行 <code>npm install &amp;&amp; npm run dev</code> 后访问
+  <code>http://localhost:3000/navigation</code>。
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2>1. 为什么不能用 &lt;a&gt;</h2>
+
+<p>原生 <code>&lt;a href&gt;</code> 会让浏览器做一次<strong>整页刷新</strong>：
+重新请求 HTML、重新下载 JS、重新挂载所有组件、清空所有状态。</p>
+
+<div class="illustration">
+<pre>
+用 &lt;a href="/other"&gt; 跳转
+   → 浏览器丢弃整个页面
+   → 重新下载 HTML + JS
+   → 所有组件重新挂载，useState 全部归零
+   → 滚动位置丢失
+
+用 &lt;Link href="/other"&gt; 跳转
+   → 只替换变化的那部分（第三章讲的「布局不销毁」）
+   → 布局和共享状态原封不动
+   → 切过去几乎瞬间完成
+</pre>
+</div>
+
+<div class="callout danger">
+  <strong>规则很简单：在 App Router 里，页面之间的跳转一律用
+  <code>&lt;Link&gt;</code>，见到 <code>&lt;a&gt;</code> 就换掉。</strong>
+  <br /><br />
+  唯一的例外是跳到站外（<code>https://...</code>）或下载文件——
+  那种情况本来就该用 <code>&lt;a&gt;</code>。
+</div>
+
+<!-- ==================== 2 ==================== -->
+<h2>2. &lt;Link&gt; 的三种常用选项</h2>
+
+<div class="code-block">
+<pre>
+<span class="kw">import</span> Link <span class="kw">from</span> <span class="str">"next/link"</span>
+
+<span class="cmt">// ① 最普通</span>
+<span class="tag">&lt;Link</span> <span class="fn">href</span>=<span class="str">"/about"</span><span class="tag">&gt;</span>关于<span class="tag">&lt;/Link&gt;</span>
+
+<span class="cmt">// ② replace：不新增历史记录，后退回不来</span>
+<span class="tag">&lt;Link</span> <span class="fn">href</span>=<span class="str">"/dashboard"</span> <span class="hl">replace</span><span class="tag">&gt;</span>进入后台<span class="tag">&lt;/Link&gt;</span>
+
+<span class="cmt">// ③ scroll=false：跳转后不自动滚到顶部</span>
+<span class="tag">&lt;Link</span> <span class="fn">href</span>=<span class="str">"/list?page=2"</span> <span class="hl">scroll</span>={<span class="kw">false</span>}<span class="tag">&gt;</span>下一页<span class="tag">&lt;/Link&gt;</span>
+</pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:24%;">选项</th><th>什么时候用</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>replace</code></td>
+      <td>不希望用户后退回来：登录成功后跳转、表单提交后跳结果页</td>
+    </tr>
+    <tr>
+      <td><code>scroll={false}</code></td>
+      <td>分页、锚点跳转——不想让页面滚回顶部</td>
+    </tr>
+    <tr>
+      <td><code>prefetch={false}</code></td>
+      <td>关掉预加载。默认是开的，一般不需要关</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>关于「预加载」</h3>
+
+<div class="callout info">
+  <strong>这是 <code>&lt;Link&gt;</code> 最值钱的地方。</strong>
+  在生产环境里，只要一个链接进入视口，Next.js 就会悄悄把目标路由的
+  代码和数据提前取回来。用户真正点下去的时候，页面几乎是瞬间出现的。
+  <br /><br />
+  所以有时候你会觉得「本地开发时跳转有点慢，线上却很快」——
+  因为<strong>开发模式关闭了预加载</strong>，为的是保证热更新及时。
+  看到这种差异不用担心，是正常的。
+</div>
+
+<!-- ==================== 3 ==================== -->
+<h2>3. 三种跳转方式，别用错</h2>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:22%;">方式</th><th style="width:26%;">发生在哪</th><th>典型场景</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>&lt;Link&gt;</code></td>
+      <td>浏览器，用户点击时</td>
+      <td>导航菜单、文章列表、任何「用户主动点」的跳转</td>
+    </tr>
+    <tr>
+      <td><code>router.push()</code></td>
+      <td>浏览器，代码触发时</td>
+      <td>「提交成功后跳走」「点击按钮跳转」</td>
+    </tr>
+    <tr>
+      <td><code>redirect()</code></td>
+      <td><strong>服务器</strong></td>
+      <td>权限校验、旧地址迁移。页面根本不会渲染</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>useRouter：代码里主动跳转</h3>
+
+<div class="code-block">
+<pre>
+<span class="hl">"use client"</span>   <span class="cmt">// useRouter 是客户端 Hook</span>
+<span class="kw">import</span> { useRouter } <span class="kw">from</span> <span class="str">"next/navigation"</span>
+
+<span class="kw">const</span> router = <span class="fn">useRouter</span>()
+
+router.<span class="fn">push</span>(<span class="str">"/dashboard"</span>)     <span class="cmt">// 跳转，新增一条历史记录</span>
+router.<span class="fn">replace</span>(<span class="str">"/dashboard"</span>)  <span class="cmt">// 跳转，替换当前历史记录</span>
+router.<span class="fn">back</span>()                  <span class="cmt">// 后退一步</span>
+router.<span class="fn">refresh</span>()               <span class="cmt">// 不跳转，重新向服务器取当前页的数据</span>
+</pre>
+</div>
+
+<p><code>refresh()</code> 比较特别：它不改变 URL，只是让服务端组件重新执行一遍。
+用在「列表里新增了一条数据，想让它立刻出现」这种场景。</p>
+
+<h3>redirect：服务器直接改地址</h3>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// 服务端组件里——注意没有 "use client"</span>
+<span class="kw">import</span> { redirect } <span class="kw">from</span> <span class="str">"next/navigation"</span>
+
+<span class="kw">export default async function</span> <span class="fn">AdminPage</span>() {
+  <span class="kw">const</span> session = <span class="kw">await</span> <span class="fn">getSession</span>()
+
+  <span class="kw">if</span> (!session) {
+    <span class="hl">redirect(<span class="str">"/login"</span>)</span>   <span class="cmt">// 服务器返回 307，页面内容一帧都不渲染</span>
+  }
+
+  <span class="kw">return</span> <span class="tag">&lt;div&gt;</span>管理后台<span class="tag">&lt;/div&gt;</span>
+}
+</pre>
+</div>
+
+<div class="callout danger">
+  <strong>权限校验必须用 <code>redirect()</code>，不能用 <code>router.push()</code>。</strong>
+  <br /><br />
+  因为 <code>router.push()</code> 发生在浏览器里——那时候页面<strong>已经渲染出来了</strong>，
+  用户可能已经瞥见了一眼受保护的内容。而 <code>redirect()</code> 在服务器上就切断了，
+  浏览器压根拿不到那个页面的 HTML。
+</div>
+
+<!-- ==================== 4 ==================== -->
+<h2>4. 路由感知：我在哪？</h2>
+
+<p>四个 Hook 回答「当前路由是什么」，全部来自 <code>next/navigation</code>，
+且都是客户端 Hook（必须在 <code>&quot;use client&quot;</code> 组件里用）：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:32%;">Hook</th><th>回答什么问题</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>usePathname()</code></td>
+      <td>当前路径是什么？→ 常用于导航高亮</td>
+    </tr>
+    <tr>
+      <td><code>useParams()</code></td>
+      <td>动态路由的参数是什么？（第六章的 <code>[slug]</code>）</td>
+    </tr>
+    <tr>
+      <td><code>useSearchParams()</code></td>
+      <td>查询参数是什么？<code>?page=2</code></td>
+    </tr>
+    <tr>
+      <td><code>useRouter()</code></td>
+      <td>我要跳转 / 刷新</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>典型用途：高亮当前页</h3>
+
+<div class="code-block">
+<pre>
+<span class="hl">"use client"</span>
+<span class="kw">import</span> { usePathname } <span class="kw">from</span> <span class="str">"next/navigation"</span>
+
+<span class="kw">export default function</span> <span class="fn">Nav</span>() {
+  <span class="kw">const</span> pathname = <span class="fn">usePathname</span>()
+
+  <span class="kw">return</span> items.<span class="fn">map</span>((item) =&gt; (
+    <span class="tag">&lt;Link</span>
+      <span class="fn">key</span>={item.href}
+      <span class="fn">href</span>={item.href}
+      <span class="fn">style</span>={{ color: pathname === item.href ? <span class="str">"#0070f3"</span> : <span class="str">"#333"</span> }}
+    <span class="tag">&gt;</span>
+      {item.label}
+    <span class="tag">&lt;/Link&gt;</span>
+  ))
+}
+</pre>
+</div>
+
+<div class="callout danger">
+  <strong>一个会直接导致构建失败的坑：</strong>用了{" "}
+  <code>useSearchParams()</code> 的组件，必须被 <code>&lt;Suspense&gt;</code> 包住，
+  否则 <code>npm run build</code> 会报错。
+  <br /><br />
+  原因：查询参数是「每次请求才有的信息」，而静态页面在构建时压根不知道它是什么。
+  加一层 Suspense，等于告诉框架「这部分等到了浏览器再渲染」。
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// ✅ 正确写法</span>
+<span class="tag">&lt;Suspense</span> <span class="fn">fallback</span>={<span class="tag">&lt;p&gt;</span>加载中…<span class="tag">&lt;/p&gt;</span>}<span class="tag">&gt;</span>
+  <span class="tag">&lt;RouterClient /&gt;</span>   <span class="cmt">{/* 内部用了 useSearchParams */}</span>
+<span class="tag">&lt;/Suspense&gt;</span>
+</pre>
+</div>
+
+<!-- ==================== 5 ==================== -->
+<h2>5. 最大的一个坑：next/router 还是 next/navigation</h2>
+
+<div class="callout danger">
+  <strong>App Router 里所有路由 Hook 都来自 <code>next/navigation</code>。</strong>
+  <br /><br />
+  <code>next/router</code> 是旧版 Pages Router 的入口，在 App Router 中使用
+  会得到 <code>undefined</code> 或直接报错。
+  <br /><br />
+  你搜到的大部分中文教程如果写的是{" "}
+  <code>import &#123; useRouter &#125; from &quot;next/router&quot;</code>，
+  那说明它是 Pages Router 时代的——对 App Router 不适用。
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// ❌ App Router 里错误</span>
+<span class="kw">import</span> { useRouter } <span class="kw">from</span> <span class="str">"next/router"</span>
+
+<span class="cmt">// ✅ 正确</span>
+<span class="kw">import</span> { useRouter, usePathname, useParams, useSearchParams } <span class="kw">from</span> <span class="str">"next/navigation"</span>
+</pre>
+</div>
+
+<!-- ==================== 6 ==================== -->
+<h2>6. 代码示例与 demo 对照</h2>
+
+<div class="callout info">
+  <strong>本章 demo 路由：</strong><code>/navigation</code>
+  <ul style="margin:8px 0 0 20px;">
+    <li>Link 的四种用法 → <code>demo/app/navigation/links/page.tsx</code></li>
+    <li>导航高亮 → <code>demo/app/navigation/links/active-nav.tsx</code></li>
+    <li>useRouter → <code>demo/app/navigation/router/router-client.tsx</code></li>
+    <li>redirect() → <code>demo/app/navigation/redirect/page.tsx</code></li>
+    <li>被重定向到的页面 → <code>demo/app/navigation/redirected/page.tsx</code></li>
+  </ul>
+</div>
+
+<div class="callout">
+  <strong>动手验证：</strong>
+  <ol style="margin:8px 0 0 20px;">
+    <li>打开 <code>/navigation/links</code>，点「用 replace 跳过去」，
+        然后按浏览器后退键——回不到 Link 那一页了。</li>
+    <li>打开 <code>/navigation/router</code>，依次点 push 和 replace 按钮再后退，
+        感受两者在历史记录上的差别。</li>
+    <li>打开 <code>/navigation/redirect</code>，点触发链接，
+        在 Network 面板里确认那个请求返回的是 <strong>307</strong>。</li>
+  </ol>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<h2>7. 小结</h2>
+
+<ul>
+  <li>页面跳转用 <code>&lt;Link&gt;</code>，不要用 <code>&lt;a&gt;</code>。</li>
+  <li><code>&lt;Link&gt;</code> 在生产环境会预加载，开发模式关闭（所以本地感觉慢是正常的）。</li>
+  <li>常用选项：<code>replace</code>（不留历史）、<code>scroll=&#123;false&#125;</code>（不滚顶部）。</li>
+  <li><code>useRouter()</code> 用于代码主动跳转：push / replace / back / refresh。</li>
+  <li><code>redirect()</code> 在服务端执行，页面完全不渲染——权限校验必须用它。</li>
+  <li>路由感知用 <code>usePathname</code> / <code>useParams</code> / <code>useSearchParams</code>。</li>
+  <li>用 <code>useSearchParams()</code> 的组件必须包在 <code>&lt;Suspense&gt;</code> 里。</li>
+  <li>所有路由 Hook 都来自 <code>next/navigation</code>，<strong>不是</strong> <code>next/router</code>。</li>
+</ul>
+
+<p>下一章讲怎么给外部系统（或者客户端组件）提供数据接口——<code>route.ts</code>。</p>
+
+<div class="nav-bottom">
+  <a href="../07-loading-and-error/index.html">← 上一章：加载状态与错误处理</a>
+  <a href="../09-route-handlers/index.html">下一章：API 路由 →</a>
+</div>
+
+</div>
+</body>
+</html>

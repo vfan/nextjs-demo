@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 · 服务端数据获取 — Next.js 教程</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #fff;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .container { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  nav { margin-bottom: 40px; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  nav span { color: #999; margin: 0 8px; }
+
+  h1 { font-size: 2.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px; }
+  .chap-label { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .intro { color: var(--text-secondary); font-size: 1.05rem; margin: 12px 0 40px; max-width: 660px; }
+
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 50px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 32px 0 10px; }
+
+  p { margin-bottom: 14px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; }
+
+  .code-block {
+    background: #1e1e1e; color: #d4d4d4; border-radius: 8px;
+    padding: 18px 22px; margin: 14px 0 18px; overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85rem; line-height: 1.7;
+  }
+  .code-block .kw { color: #569cd6; }
+  .code-block .fn { color: #dcdcaa; }
+  .code-block .str { color: #ce9178; }
+  .code-block .cmt { color: #6a9955; }
+  .code-block .tag { color: #4ec9b0; }
+  .code-block .hl { color: #ffd479; }
+  .code-block .del { color: #e06c75; text-decoration: line-through; }
+
+  .illustration {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px 28px; margin: 22px 0; overflow-x: auto;
+  }
+  .illustration pre { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.85rem; line-height: 1.75; color: #333; }
+
+  .callout { background: #fff8e1; border-left: 3px solid #f0b400; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 20px 0; font-size: 0.93rem; }
+  .callout.info { background: #e8f4fd; border-left-color: var(--accent); }
+  .callout.danger { background: #fdecec; border-left-color: #e5484d; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 22px; font-size: 0.9rem; }
+  th { background: #f5f5f5; text-align: left; padding: 10px 12px; border: 1px solid var(--border); font-weight: 600; }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+
+  .nav-bottom { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; }
+  .nav-bottom a { color: var(--accent); text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav>
+  <a href="../index.html">教程首页</a><span>/</span>05 · 服务端数据获取
+</nav>
+
+<div class="chap-label">第五章</div>
+<h1>服务端数据获取</h1>
+<p class="intro">
+  上一章讲了服务端组件可以 <code>await</code>。这一章就专门讲怎么 <code>await</code>：
+  数据从哪来、要不要缓存、怎么避免把接口调用写成一条慢吞吞的流水线。
+</p>
+
+<div class="callout info" style="margin-bottom:32px;">
+  <strong>配套可运行代码：</strong>本章在 demo 的 <code>/data-fetching</code> 路由下，
+  另有一个模拟的第三方接口 <code>/api/weather</code>。
+  执行 <code>npm install &amp;&amp; npm run dev</code> 后访问
+  <code>http://localhost:3000/data-fetching</code>。
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2>1. 最自然的写法：组件直接 await</h2>
+
+<p>先把「应该怎么写」和「以前怎么写」放在一起对比，差别一目了然。</p>
+
+<h3>以前（客户端组件）：三套状态要自己管</h3>
+
+<div class="code-block">
+<pre>
+<span class="hl">"use client"</span>
+<span class="kw">const</span> [data, setData] = useState(<span class="kw">null</span>)
+<span class="kw">const</span> [loading, setLoading] = useState(<span class="kw">true</span>)
+<span class="kw">const</span> [error, setError] = useState(<span class="kw">null</span>)
+
+useEffect(() =&gt; {
+  <span class="fn">fetch</span>(<span class="str">"/api/weather"</span>)
+    .<span class="fn">then</span>((r) =&gt; r.<span class="fn">json</span>())
+    .<span class="fn">then</span>(setData)
+    .<span class="fn">catch</span>(setError)
+    .<span class="fn">finally</span>(() =&gt; <span class="fn">setLoading</span>(<span class="kw">false</span>))
+}, [])
+
+<span class="kw">if</span> (loading) <span class="kw">return</span> <span class="tag">&lt;p&gt;</span>加载中…<span class="tag">&lt;/p&gt;</span>
+<span class="kw">if</span> (error) <span class="kw">return</span> <span class="tag">&lt;p&gt;</span>出错了<span class="tag">&lt;/p&gt;</span>
+</pre>
+</div>
+
+<h3>现在（服务端组件）：一行</h3>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/data-fetching/page.tsx</span>
+<span class="kw">export default async function</span> <span class="fn">Page</span>() {
+  <span class="hl">const res = await fetch(url, { cache: "no-store" })</span>
+  <span class="kw">const</span> weather = <span class="kw">await</span> res.<span class="fn">json</span>()
+
+  <span class="kw">return</span> <span class="tag">&lt;p&gt;</span>{weather.city}：{weather.temp}°C<span class="tag">&lt;/p&gt;</span>
+}
+</pre>
+</div>
+
+<p>三件事同时消失了：不需要 <code>useState</code>、不需要 <code>useEffect</code>、
+<strong>也不需要「加载中」这个状态</strong>。</p>
+
+<div class="callout info">
+  <strong>为什么没有「加载中」？</strong>
+  因为取数发生在渲染之前。数据没到手，HTML 就还没开始生成。
+  浏览器拿到的是已经带着数据的完整页面，自然不会经历「先空后满」。
+  <br /><br />
+  那如果取数很慢、用户要干等怎么办？那是第七章
+  <code>loading.tsx</code> 要解决的问题——它管的是「服务器忙的时候先给用户看点东西」，
+  和「页面渲染出来之后再去补数据」是两码事。
+</div>
+
+<!-- ==================== 2 ==================== -->
+<h2>2. 数据可以从哪来</h2>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:26%;">来源</th><th>写法</th><th>说明</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>自己的数据库</strong></td>
+      <td><code>const posts = await db.post.findMany()</code></td>
+      <td>最常见。服务端组件里直接调用，不需要 API 层</td>
+    </tr>
+    <tr>
+      <td><strong>外部接口</strong></td>
+      <td><code>await fetch("https://api.xxx.com/...")</code></td>
+      <td>直接写绝对地址</td>
+    </tr>
+    <tr>
+      <td><strong>自己的 API 路由</strong></td>
+      <td><code>await fetch(`${base}/api/xxx`)</code></td>
+      <td>多数情况下<strong>不需要</strong>这样做，绕了一圈还多一次网络开销</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>第二种是本节的 demo 用的方式——因为 demo 需要一个「外部数据源」，
+而这个数据源恰好就实现在同一个项目里。</p>
+
+<div class="callout">
+  <strong>一个值得记住的建议：</strong>如果你在用 App Router，
+  通常<strong>不需要</strong>为了给自己的页面取数而专门写 API 接口。
+  服务端组件的代码本来就不会发到浏览器，直接在里面查数据库既安全又少一跳网络。
+  API 接口（第九章）更适合给「外部调用」或「客户端组件」用。
+</div>
+
+<!-- ==================== 3 ==================== -->
+<h2>3. 缓存：三种 fetch 选项</h2>
+
+<p>取到的数据要不要缓存、缓存多久，是靠 <code>fetch</code> 的第二个参数控制的。</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:36%;">写法</th><th>行为</th><th>适用</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>{ cache: "no-store" }</code></td>
+      <td>不缓存，每次请求都真的去调</td>
+      <td>实时数据</td>
+    </tr>
+    <tr>
+      <td><code>{ next: { revalidate: 10 } }</code></td>
+      <td>缓存 10 秒，期间复用</td>
+      <td>允许略有延迟的数据</td>
+    </tr>
+    <tr>
+      <td><code>{ cache: "force-cache" }</code></td>
+      <td>永久缓存，直到构建/手动失效</td>
+      <td>几乎不变的数据</td>
+    </tr>
+    <tr>
+      <td>什么都不写</td>
+      <td>等同于 <code>no-store</code></td>
+      <td>—</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout danger">
+  <strong>最后一行是这一章最容易踩的坑。</strong>
+  如果你看过一些旧教程，可能会记得「Next.js 默认缓存 fetch」。那是
+  <strong>Next.js 14 及以前</strong>的行为。
+  <br /><br />
+  从 <strong>Next.js 15 开始，默认值反过来了：不写就等于不缓存。</strong>
+  想启用缓存必须显式写出 <code>next: &#123; revalidate: N &#125;</code>。
+  这个变化让很多照着旧文章写的代码「变快了但变旧了」，值得记一下。
+</div>
+
+<h3>缓存带来的一个副作用</h3>
+
+<p>注意一个连带效果：一旦页面里出现了 <code>no-store</code>，
+<strong>整个页面就变成动态渲染</strong>（第一章讲的 SSR）——因为每次请求结果都可能不同，
+没法在构建时算出来。反过来，如果所有 fetch 都是缓存的，
+这个页面就能被静态化。</p>
+
+<div class="callout info">
+  <strong>如果数据不是 fetch 来的呢？</strong>
+  比如直接查数据库，那 <code>fetch</code> 的选项就管不着了。两个办法：
+  <ul style="margin:8px 0 0 20px;">
+    <li>用 <code>unstable_cache</code> 把任意函数包起来缓存；</li>
+    <li>用路由段配置 <code>export const revalidate = 10</code> 控制整个页面的再生周期
+        （第一章讲 ISR 时用过）。</li>
+  </ul>
+</div>
+
+<!-- ==================== 4 ==================== -->
+<h2>4. 别把请求写成流水线</h2>
+
+<p>这是实际项目里最容易忽视的性能问题。多个 <code>await</code> 排成一排时，
+它们是<strong>一个等一个</strong>的：</p>
+
+<div class="illustration">
+<pre>
+【串行】总耗时 = 三次相加
+
+  ├── 请求 A (300ms) ──┤
+                        ├── 请求 B (300ms) ──┤
+                                              ├── 请求 C (300ms) ──┤
+  总耗时 ≈ 900ms
+
+【并行】总耗时 = 最慢的那一个
+
+  ├── 请求 A (300ms) ──┤
+  ├── 请求 B (300ms) ──┤
+  ├── 请求 C (300ms) ──┤
+  总耗时 ≈ 300ms
+</pre>
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// ❌ 串行：等完第一个才开始第二个</span>
+<span class="kw">const</span> a = <span class="kw">await</span> <span class="fn">getWeather</span>(url)
+<span class="kw">const</span> b = <span class="kw">await</span> <span class="fn">getWeather</span>(url)
+<span class="kw">const</span> c = <span class="kw">await</span> <span class="fn">getWeather</span>(url)
+
+<span class="cmt">// ✅ 并行：三个同时发出</span>
+<span class="kw">const</span> [a, b, c] = <span class="kw">await</span> <span class="fn">Promise.all</span>([
+  <span class="fn">getWeather</span>(url),
+  <span class="fn">getWeather</span>(url),
+  <span class="fn">getWeather</span>(url),
+])
+</pre>
+</div>
+
+<div class="callout">
+  <strong>什么时候不能并行？</strong>当后一个请求依赖前一个的结果时。
+  例如先查用户 id、再拿 id 查订单，就只能串行。
+  判断标准很简单：<strong>这几次请求之间有没有依赖关系</strong>。
+</div>
+
+<h3>更隐蔽的一种串行：嵌套组件</h3>
+
+<p>除了写在同一个函数里的 <code>await</code>，还有一种瀑布流来自于组件嵌套：</p>
+
+<div class="illustration">
+<pre>
+&lt;Parent&gt;  await 取数据（300ms）
+   └── &lt;Child&gt;  再 await 取数据（300ms）
+
+父组件要等自己的数据到手，才开始渲染子组件；
+子组件再发起自己的请求。总耗时 600ms。
+</pre>
+</div>
+
+<p>解决办法是在中间插入 <code>&lt;Suspense&gt;</code> 边界，
+让子组件的数据请求先发出去、稍后再把结果填进来。这就是「流式渲染」，
+第八章讲导航与加载时会展开。</p>
+
+<!-- ==================== 5 ==================== -->
+<h2>5. 与第一章的关系</h2>
+
+<p>回头看第一章的那张表，现在应该能对上了：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th>页面里的取数方式</th><th>等价于第一章的</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>所有 fetch 都带缓存（revalidate / force-cache）</td><td><strong>SSG</strong> 或 <strong>ISR</strong></td></tr>
+    <tr><td>任意一个 fetch 是 no-store</td><td><strong>SSR</strong>（动态渲染）</td></tr>
+    <tr><td>数据在客户端组件里用 useEffect 取</td><td><strong>CSR</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>也就是说，「渲染策略」不是另外学的一套东西，它就是取数方式的自然结果。
+你不用刻意去选，写完之后怎么取数，就决定了它是什么。</p>
+
+<!-- ==================== 6 ==================== -->
+<h2>6. 代码示例与 demo 对照</h2>
+
+<div class="callout info">
+  <strong>本章 demo 路由：</strong><code>/data-fetching</code>
+  <ul style="margin:8px 0 0 20px;">
+    <li>直接取数据 → <code>demo/app/data-fetching/page.tsx</code></li>
+    <li>缓存控制 → <code>demo/app/data-fetching/caching/page.tsx</code></li>
+    <li>串行 vs 并行 → <code>demo/app/data-fetching/parallel/page.tsx</code></li>
+    <li>模拟的第三方接口 → <code>demo/app/api/weather/route.ts</code></li>
+    <li>绝对地址辅助函数 → <code>demo/app/data-fetching/api-url.ts</code></li>
+  </ul>
+</div>
+
+<div class="callout">
+  <strong>动手验证：</strong>
+  <ol style="margin:8px 0 0 20px;">
+    <li>打开 <code>/data-fetching/caching</code>，连续快速刷新。
+        你会看到 <code>no-store</code> 和「什么都不写」两张卡片的时间戳一直在变，
+        而 <code>revalidate: 10</code> 那张 10 秒内纹丝不动。</li>
+    <li>打开 <code>/data-fetching/parallel</code>，
+        对比页面上打出的两个耗时数字——一个约 900ms，一个约 300ms。</li>
+  </ol>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<h2>7. 小结</h2>
+
+<ul>
+  <li>服务端组件里<strong>直接 await</strong> 取数，不需要 useState / useEffect。</li>
+  <li>取数在渲染之前完成，所以<strong>不存在「加载中」状态</strong>。</li>
+  <li>给自己的页面取数通常<strong>不需要</strong>写 API 接口，直接调数据模块。</li>
+  <li>缓存由 fetch 选项控制：<code>no-store</code> / <code>revalidate</code> / <code>force-cache</code>。</li>
+  <li><strong>Next.js 15 起 fetch 默认不缓存</strong>，要缓存必须显式声明。</li>
+  <li>没有依赖关系的请求要用 <code>Promise.all</code> 并行，避免瀑布流。</li>
+  <li>取数方式决定了渲染策略：全缓存 → SSG/ISR，有 no-store → SSR。</li>
+</ul>
+
+<p>下一章讲动态路由——让一个 <code>page.tsx</code> 接住成千上万个不同的 URL。</p>
+
+<div class="nav-bottom">
+  <a href="../04-server-client-components/index.html">← 上一章：服务端组件 vs 客户端组件</a>
+  <a href="../06-dynamic-routes/index.html">下一章：动态路由 →</a>
+</div>
+
+</div>
+</body>
+</html>

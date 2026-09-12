@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 · 服务端组件 vs 客户端组件 — Next.js 教程</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #fff;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .container { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  nav { margin-bottom: 40px; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  nav span { color: #999; margin: 0 8px; }
+
+  h1 { font-size: 2.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px; }
+  .chap-label { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .intro { color: var(--text-secondary); font-size: 1.05rem; margin: 12px 0 40px; max-width: 660px; }
+
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 50px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 32px 0 10px; }
+
+  p { margin-bottom: 14px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; }
+
+  .code-block {
+    background: #1e1e1e; color: #d4d4d4; border-radius: 8px;
+    padding: 18px 22px; margin: 14px 0 18px; overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85rem; line-height: 1.7;
+  }
+  .code-block .kw { color: #569cd6; }
+  .code-block .fn { color: #dcdcaa; }
+  .code-block .str { color: #ce9178; }
+  .code-block .cmt { color: #6a9955; }
+  .code-block .tag { color: #4ec9b0; }
+  .code-block .hl { color: #ffd479; }
+
+  .illustration {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px 28px; margin: 22px 0; overflow-x: auto;
+  }
+  .illustration pre { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.85rem; line-height: 1.75; color: #333; }
+
+  .callout { background: #fff8e1; border-left: 3px solid #f0b400; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 20px 0; font-size: 0.93rem; }
+  .callout.info { background: #e8f4fd; border-left-color: var(--accent); }
+  .callout.danger { background: #fdecec; border-left-color: #e5484d; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 22px; font-size: 0.9rem; }
+  th { background: #f5f5f5; text-align: left; padding: 10px 12px; border: 1px solid var(--border); font-weight: 600; }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+
+  .nav-bottom { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; }
+  .nav-bottom a { color: var(--accent); text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav>
+  <a href="../index.html">教程首页</a><span>/</span>04 · 服务端组件 vs 客户端组件
+</nav>
+
+<div class="chap-label">第四章</div>
+<h1>服务端组件 vs 客户端组件</h1>
+<p class="intro">
+  这一章要解决的疑问是：<strong>我写的这段组件代码，到底跑在哪里？</strong>
+  答案决定了你能不能用 <code>useState</code>、能不能安全地读数据库、
+  以及这段代码会不会被下载到用户的手机上。
+</p>
+
+<div class="callout info" style="margin-bottom:32px;">
+  <strong>配套可运行代码：</strong>本章在 demo 的 <code>/server-client</code> 路由下，
+  共四个页面。执行 <code>npm install &amp;&amp; npm run dev</code> 后访问
+  <code>http://localhost:3000/server-client</code>。详细说明见 <code>demo/README.md</code>。
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2>1. 一条规则：默认全在服务端</h2>
+
+<p>在 App Router 里，判断标准简单到只有一句话：</p>
+
+<div class="illustration">
+<pre>
+文件顶部有 "use client" 吗？
+   ├── 没有  →  服务端组件（Server Component）   ← 默认
+   └── 有    →  客户端组件（Client Component）
+</pre>
+</div>
+
+<p>注意「默认」这两个字。你在第一到第三章写的所有 <code>page.tsx</code>、
+<code>layout.tsx</code>，全都是服务端组件——哪怕你没意识到。
+它们没有 <code>useState</code>，没有事件监听，只是在服务器上把 JSX
+变成 HTML 发出去，然后就结束了。</p>
+
+<div class="callout">
+  <strong>这个默认值和很多人直觉相反。</strong>如果你写过纯 React 单页应用，
+  默认是「一切都在浏览器里跑」。Next.js 把这个默认值反过来了：
+  先在服务器上渲染，只有你明确要求，才把代码发到浏览器。
+</div>
+
+<!-- ==================== 2 ==================== -->
+<h2>2. 对比表</h2>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th style="width:26%;">对比项</th>
+      <th>服务端组件（默认）</th>
+      <th>客户端组件（"use client"）</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>能用 useState / onClick 吗</strong></td>
+      <td>不能，会直接报错</td>
+      <td>能</td>
+    </tr>
+    <tr>
+      <td><strong>能直接 await 取数据吗</strong></td>
+      <td>能，组件本身可以是 async</td>
+      <td>不能，得用 useEffect 或 use()</td>
+    </tr>
+    <tr>
+      <td><strong>代码会发给浏览器吗</strong></td>
+      <td>不会，只发渲染结果</td>
+      <td>会，整份代码都在 JS 包里</td>
+    </tr>
+    <tr>
+      <td><strong>能读数据库 / 密钥吗</strong></td>
+      <td>能，很安全</td>
+      <td>不能，等同于公开发布</td>
+    </tr>
+    <tr>
+      <td><strong>能渲染对方吗</strong></td>
+      <td>能渲染客户端组件</td>
+      <td>不能 import 服务端组件</td>
+    </tr>
+    <tr>
+      <td><strong>能用浏览器 API 吗</strong></td>
+      <td>不能（没有 window）</td>
+      <td>能</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ==================== 3 ==================== -->
+<h2>3. 服务端组件能做什么</h2>
+
+<p>一个服务端组件最大的本事，是它可以是一个 <code>async</code> 函数，
+里面直接 <code>await</code>：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/server-client/server-demo/page.tsx</span>
+<span class="cmt">// 没有 "use client" —— 所以它是服务端组件</span>
+
+<span class="kw">import</span> { getDashboardData } <span class="kw">from</span> <span class="str">"../server-data"</span>
+
+<span class="kw">export default async function</span> <span class="fn">ServerDemoPage</span>() {
+  <span class="hl">const data = await getDashboardData()</span>   <span class="cmt">// 直接 await，不需要 useEffect</span>
+
+  <span class="kw">return</span> <span class="tag">&lt;p&gt;</span>渲染时间：{data.generatedAt}<span class="tag">&lt;/p&gt;</span>
+}
+</pre>
+</div>
+
+<p>对比一下客户端组件的写法：要先 <code>useState</code> 存数据、再
+<code>useEffect</code> 里发请求、还要处理「加载中」和「出错」两种状态。
+服务端组件把这些都省掉了——数据在渲染之前就已经拿到了。</p>
+
+<h3>更重要的：敏感代码天然不外泄</h3>
+
+<p>服务端组件的代码<strong>不会</strong>出现在浏览器的 JS 包里。
+这意味着你可以放心地在里面写数据库查询、使用 API 密钥：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/server-client/server-data.ts —— 只有服务端会执行这个文件</span>
+<span class="kw">const</span> INTERNAL_TOKEN = <span class="str">"srv_9f3a91c4"</span>   <span class="cmt">// 相当于数据库密码</span>
+
+<span class="kw">export async function</span> <span class="fn">getDashboardData</span>() {
+  <span class="kw">await</span> <span class="fn">new</span> <span class="kw">Promise</span>((r) =&gt; <span class="fn">setTimeout</span>(r, <span class="str">120</span>))  <span class="cmt">// 模拟数据库查询</span>
+  <span class="kw">return</span> { token: INTERNAL_TOKEN, ... }
+}
+</pre>
+</div>
+
+<div class="callout danger">
+  <strong>如果这段代码写在客户端组件里，会怎样？</strong>
+  整个文件会被打包进 JS，任何人打开开发者工具都能看到
+  <code>INTERNAL_TOKEN</code> 的字面值。密钥就公开了。
+  <br />
+  这是初学者最容易犯、后果最严重的错误之一。<strong>凡是涉及密钥、
+  数据库、内部接口的代码，都必须留在服务端组件里。</strong>
+</div>
+
+<!-- ==================== 4 ==================== -->
+<h2>4. 客户端组件什么时候必须用</h2>
+
+<p>只有三类场景需要 <code>&quot;use client&quot;</code>：</p>
+
+<ol>
+  <li><strong>需要状态或事件</strong>：<code>useState</code>、<code>useReducer</code>、
+      <code>onClick</code>、<code>onChange</code>；</li>
+  <li><strong>需要浏览器 API</strong>：<code>window</code>、<code>localStorage</code>、
+      <code>IntersectionObserver</code>、<code>navigator</code>；</li>
+  <li><strong>需要依赖这些的第三方库</strong>：大多数动画库、图表库、UI 组件库。</li>
+</ol>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/server-client/counter.tsx</span>
+<span class="hl">"use client"</span>   <span class="cmt">// 这一行把它变成客户端组件</span>
+
+<span class="kw">import</span> { useState } <span class="kw">from</span> <span class="str">"react"</span>
+
+<span class="kw">export default function</span> <span class="fn">Counter</span>() {
+  <span class="kw">const</span> [count, setCount] = useState(<span class="str">0</span>)
+  <span class="kw">return</span> <span class="tag">&lt;button</span> <span class="fn">onClick</span>={() =&gt; <span class="fn">setCount</span>(count + <span class="str">1</span>)}<span class="tag">&gt;</span>点了 {count} 次<span class="tag">&lt;/button&gt;</span>
+}
+</pre>
+</div>
+
+<!-- ==================== 5 ==================== -->
+<h2>5. "use client" 划的是边界，不是标签</h2>
+
+<p>这是最容易理解错的一点。<code>&quot;use client&quot;</code> 不是给某个组件贴个标签，
+而是<strong>划出一条边界</strong>：</p>
+
+<div class="illustration">
+<pre>
+"use client" 所在的文件
+   ↓ 它 import 的所有模块
+   ↓    ↓ 那些模块 import 的模块
+   ↓    ↓    ↓ ...
+   └────┴────┴──► 全部都是客户端代码，全部会被打包进浏览器
+</pre>
+</div>
+
+<p>也就是说，一旦某个文件加了 <code>&quot;use client&quot;</code>，它导入的
+整个依赖树都会跟着变成客户端代码。所以：</p>
+
+<div class="callout">
+  <strong>实践原则：把 <code>&quot;use client&quot;</code> 尽量往下放。</strong>
+  不要图省事在根布局或页面顶层加——那样整个页面连同它引用的所有组件、
+  样式、工具函数都会被打包进 JS，白白增加体积。
+  正确做法是把需要交互的那一小块抽出来，只给它加这行。
+</div>
+
+<!-- ==================== 6 ==================== -->
+<h2>6. 一个被广泛误解的点</h2>
+
+<div class="callout info">
+  <strong>「客户端组件」不等于「只在客户端渲染」。</strong>
+  <br /><br />
+  客户端组件同样会先在服务器上渲染成 HTML（Next.js 会做「预渲染」），
+  然后再把 JS 发到浏览器，让它在那边「激活」（hydrate）一次——
+  之后点击、输入才有反应。
+  <br /><br />
+  所以：刷新页面时，客户端组件的内容<strong>一开始就在 HTML 里</strong>，
+  不是先空白再出现。真正「先空白再出现」的是第一章讲的 CSR 模式
+  （数据在浏览器里才去取）。
+</div>
+
+<p>这两件事经常被混为一谈：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th></th><th>含义</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>&quot;use client&quot;</strong></td>
+      <td>组件<strong>代码</strong>要发到浏览器去执行。首次 HTML 仍然由服务器生成。</td>
+    </tr>
+    <tr>
+      <td><strong>CSR（第一章）</strong></td>
+      <td>页面<strong>内容</strong>要等浏览器里的 JS 跑完才出现。</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<h2>7. 两者怎么配合</h2>
+
+<p>真实项目里的典型结构是：<strong>外层服务端组件负责取数据和排版，
+内层客户端组件负责交互</strong>。</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/server-client/client-demo/page.tsx —— 外层是服务端组件</span>
+<span class="kw">import</span> Counter <span class="kw">from</span> <span class="str">"../counter"</span>   <span class="cmt">// 内层是客户端组件</span>
+
+<span class="kw">export default function</span> <span class="fn">ClientDemoPage</span>() {
+  <span class="kw">return</span> (
+    <span class="tag">&lt;main&gt;</span>
+      <span class="tag">&lt;h1&gt;</span>客户端组件<span class="tag">&lt;/h1&gt;</span>
+      <span class="tag">&lt;Counter /&gt;</span>   <span class="cmt">// 只有这一小块是客户端代码</span>
+    <span class="tag">&lt;/main&gt;</span>
+  )
+}
+</pre>
+</div>
+
+<h3>传参规则：必须可序列化</h3>
+
+<p>服务端组件往客户端组件传的 props，要能跨网络传输，所以必须可序列化：</p>
+
+<ul>
+  <li>✅ 可以传：字符串、数字、布尔、数组、普通对象、<code>Date</code>、<code>null</code></li>
+  <li>❌ 不能传：函数、类实例、<code>Symbol</code></li>
+</ul>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// ✅ 可以：传普通数据</span>
+<span class="tag">&lt;Counter</span> <span class="fn">initial</span>={<span class="str">42</span>} <span class="tag">/&gt;</span>
+
+<span class="cmt">// ❌ 不行：函数无法序列化</span>
+<span class="tag">&lt;Counter</span> <span class="fn">onDone</span>={() =&gt; <span class="fn">console</span>.<span class="fn">log</span>(<span class="str">"完成"</span>)} <span class="tag">/&gt;</span>
+</pre>
+</div>
+
+<h3>children 插槽：让客户端组件包住服务端内容</h3>
+
+<p>客户端组件不能 <code>import</code> 服务端组件，但可以通过 <code>children</code>
+接收已经渲染好的服务端内容：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// 外层是可交互的客户端组件（比如一个折叠面板）</span>
+<span class="tag">&lt;Collapsible&gt;</span>
+  <span class="cmt">{/* 里面放的却是服务端组件——它在服务端渲染好，
+      作为 children 传进去，不需要变成客户端代码 */}</span>
+  <span class="tag">&lt;ServerRenderedChart /&gt;</span>
+<span class="tag">&lt;/Collapsible&gt;</span>
+</pre>
+</div>
+
+<p>这个模式非常有用：一个交互容器（客户端）可以装任意多个重量级的
+服务端内容，而后者的代码一行都不会进入浏览器的 JS 包。</p>
+
+<!-- ==================== 8 ==================== -->
+<h2>8. 代码示例与 demo 对照</h2>
+
+<div class="callout info">
+  <strong>本章 demo 路由：</strong><code>/server-client</code>
+  <ul style="margin:8px 0 0 20px;">
+    <li>总览 → <code>demo/app/server-client/page.tsx</code></li>
+    <li>服务端组件 → <code>demo/app/server-client/server-demo/page.tsx</code></li>
+    <li>客户端组件 → <code>demo/app/server-client/counter.tsx</code></li>
+    <li>组合使用 → <code>demo/app/server-client/composition/page.tsx</code></li>
+    <li>只跑在服务端的模块 → <code>demo/app/server-client/server-data.ts</code></li>
+  </ul>
+</div>
+
+<div class="callout">
+  <strong>动手验证：</strong>打开 <code>/server-client/server-demo</code>，
+  按 <code>Ctrl+U</code> 查看网页源代码，搜索 <code>srv_</code>——
+  你能找到那个 token，因为它被渲染进了 HTML。但打开开发者工具的
+  Sources 面板搜同一个字符串，在 JS 文件里却搜不到它的定义，
+  因为 <code>server-data.ts</code> 根本没有被发给浏览器。
+</div>
+
+<!-- ==================== 9 ==================== -->
+<h2>9. 小结</h2>
+
+<ul>
+  <li><strong>默认全是服务端组件</strong>，加 <code>&quot;use client&quot;</code> 才变成客户端组件。</li>
+  <li>服务端组件能 <code>async/await</code>、能读密钥、代码不进 JS 包；但不能用 hooks 和事件。</li>
+  <li>客户端组件能交互、能用浏览器 API；但代码会全部打包发到浏览器。</li>
+  <li><code>&quot;use client&quot;</code> 划的是<strong>边界</strong>，会沿着 import 树向下传染，
+      所以要尽量往叶子节点放。</li>
+  <li>客户端组件<strong>也会</strong>被服务端预渲染——它跟第一章的 CSR 不是一回事。</li>
+  <li>服务端往客户端传的 props 必须可序列化。</li>
+  <li>用 <code>children</code> 插槽可以让客户端组件包住服务端内容。</li>
+</ul>
+
+<p>下一章讲怎么在服务端组件里取数据，以及「取到的数据要不要缓存」。</p>
+
+<div class="nav-bottom">
+  <a href="../03-layouts/index.html">← 上一章：布局系统</a>
+  <a href="../05-data-fetching/index.html">下一章：服务端数据获取 →</a>
+</div>
+
+</div>
+</body>
+</html>

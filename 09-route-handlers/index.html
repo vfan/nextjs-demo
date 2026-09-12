@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09 · API 路由 — Next.js 教程</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #fff;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .container { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  nav { margin-bottom: 40px; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  nav span { color: #999; margin: 0 8px; }
+
+  h1 { font-size: 2.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px; }
+  .chap-label { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .intro { color: var(--text-secondary); font-size: 1.05rem; margin: 12px 0 40px; max-width: 660px; }
+
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 50px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 32px 0 10px; }
+
+  p { margin-bottom: 14px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; }
+
+  .code-block {
+    background: #1e1e1e; color: #d4d4d4; border-radius: 8px;
+    padding: 18px 22px; margin: 14px 0 18px; overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85rem; line-height: 1.7;
+  }
+  .code-block .kw { color: #569cd6; }
+  .code-block .fn { color: #dcdcaa; }
+  .code-block .str { color: #ce9178; }
+  .code-block .cmt { color: #6a9955; }
+  .code-block .tag { color: #4ec9b0; }
+  .code-block .hl { color: #ffd479; }
+
+  .illustration {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px 28px; margin: 22px 0; overflow-x: auto;
+  }
+  .illustration pre { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.85rem; line-height: 1.75; color: #333; }
+
+  .callout { background: #fff8e1; border-left: 3px solid #f0b400; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 20px 0; font-size: 0.93rem; }
+  .callout.info { background: #e8f4fd; border-left-color: var(--accent); }
+  .callout.danger { background: #fdecec; border-left-color: #e5484d; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 22px; font-size: 0.9rem; }
+  th { background: #f5f5f5; text-align: left; padding: 10px 12px; border: 1px solid var(--border); font-weight: 600; }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+
+  .nav-bottom { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; }
+  .nav-bottom a { color: var(--accent); text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav>
+  <a href="../index.html">教程首页</a><span>/</span>09 · API 路由
+</nav>
+
+<div class="chap-label">第九章</div>
+<h1>API 路由：route.ts</h1>
+<p class="intro">
+  前面几章的取数都发生在服务端组件内部。但如果调用方是<strong>外部系统</strong>
+  或者<strong>浏览器里的客户端组件</strong>，就需要一个真正的 HTTP 接口。
+  App Router 用它自己的方式提供这件事：一个叫 <code>route.ts</code> 的文件。
+</p>
+
+<div class="callout info" style="margin-bottom:32px;">
+  <strong>配套可运行代码：</strong>本章在 demo 的 <code>/route-handlers</code> 路由下，
+  接口实现在 <code>/api/todos</code>。
+  执行 <code>npm install &amp;&amp; npm run dev</code> 后访问
+  <code>http://localhost:3000/route-handlers</code>。
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2>1. 文件和 URL 的对应关系没变</h2>
+
+<p>定位接口用的还是那套文件夹规则，只是文件名换成了 <code>route.ts</code>：</p>
+
+<div class="illustration">
+<pre>
+app/api/todos/route.ts          →  /api/todos
+app/api/todos/[id]/route.ts     →  /api/todos/1、/api/todos/2 ...
+
+app/route-handlers/page.tsx     →  /route-handlers（这是页面）
+</pre>
+</div>
+
+<p>区别在于<strong>导出什么</strong>：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:34%;">文件</th><th>默认导出 / 具名导出</th><th>得到</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>page.tsx</code></td>
+      <td>默认导出一个 React 组件</td>
+      <td>一个网页</td>
+    </tr>
+    <tr>
+      <td><code>route.ts</code></td>
+      <td>导出 <code>GET</code> / <code>POST</code> / <code>PUT</code> /
+          <code>DELETE</code> / <code>PATCH</code> 等函数</td>
+      <td>一个 HTTP 接口</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout danger">
+  <strong>一条硬性规则：同一个文件夹里，<code>route.ts</code> 和
+  <code>page.tsx</code> 不能共存。</strong>
+  因为它们会争抢同一个 URL——Next.js 不知道该给你一个网页还是一个接口，
+  构建时会直接报错。
+</div>
+
+<!-- ==================== 2 ==================== -->
+<h2>2. 一个最小的接口</h2>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/api/todos/route.ts</span>
+<span class="kw">import</span> { NextResponse } <span class="kw">from</span> <span class="str">"next/server"</span>
+<span class="kw">import</span> { listTodos } <span class="kw">from</span> <span class="str">"./store"</span>
+
+<span class="cmt">// GET /api/todos</span>
+<span class="hl">export async function GET()</span> {
+  <span class="kw">return</span> NextResponse.<span class="fn">json</span>({ todos: <span class="fn">listTodos</span>() })
+}
+
+<span class="cmt">// POST /api/todos</span>
+<span class="hl">export async function POST</span>(request: Request) {
+  <span class="kw">const</span> body = <span class="kw">await</span> request.<span class="fn">json</span>()      <span class="cmt">// 读请求体</span>
+
+  <span class="kw">if</span> (!body.title) {
+    <span class="kw">return</span> NextResponse.<span class="fn">json</span>({ error: <span class="str">"title 不能为空"</span> }, { status: <span class="str">400</span> })
+  }
+
+  <span class="kw">return</span> NextResponse.<span class="fn">json</span>({ todo: <span class="fn">createTodo</span>(body.title) }, { status: <span class="str">201</span> })
+}
+</pre>
+</div>
+
+<p>几个要点：</p>
+
+<ul>
+  <li>函数名就是 HTTP 方法名，<strong>必须大写</strong>。没导出的方法会自动返回 405。</li>
+  <li>返回一个 <code>Response</code> 对象。<code>NextResponse.json()</code> 是最常用的帮手。</li>
+  <li>状态码通过第二个参数指定：<code>{ status: 201 }</code>。</li>
+  <li>函数是 <code>async</code> 的，因为读请求体、查数据库都是异步操作。</li>
+</ul>
+
+<h3>动态参数也是 Promise</h3>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/api/todos/[id]/route.ts</span>
+<span class="kw">export async function DELETE</span>(
+  _request: Request,
+  { params }: { params: Promise&lt;{ id: string }&gt; },   <span class="cmt">// 同样是 Promise</span>
+) {
+  <span class="hl">const { id } = await params</span>
+  ...
+}
+</pre>
+</div>
+
+<p>和第六章页面里的变化完全一致——Next.js 15 起，所有「跟本次请求绑定的东西」
+都变成了异步的。</p>
+
+<!-- ==================== 3 ==================== -->
+<h2>3. 读请求、写响应</h2>
+
+<h3>读</h3>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:34%;">要读什么</th><th>怎么写</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>请求体（JSON）</td>
+      <td><code>const body = await request.json()</code></td>
+    </tr>
+    <tr>
+      <td>查询参数</td>
+      <td><code>new URL(request.url).searchParams.get(&quot;q&quot;)</code></td>
+    </tr>
+    <tr>
+      <td>请求头</td>
+      <td><code>request.headers.get(&quot;authorization&quot;)</code></td>
+    </tr>
+    <tr>
+      <td>动态路径参数</td>
+      <td><code>const &#123; id &#125; = await params</code></td>
+    </tr>
+    <tr>
+      <td>Cookie</td>
+      <td><code>(await cookies()).get(&quot;token&quot;)</code></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>写</h3>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// 返回 JSON（最常用）</span>
+<span class="kw">return</span> NextResponse.<span class="fn">json</span>({ ok: <span class="kw">true</span> })
+
+<span class="cmt">// 带状态码</span>
+<span class="kw">return</span> NextResponse.<span class="fn">json</span>({ error: <span class="str">"没找到"</span> }, { status: <span class="str">404</span> })
+
+<span class="cmt">// 什么都不返回（比如删除成功）</span>
+<span class="kw">return new</span> <span class="fn">NextResponse</span>(<span class="kw">null</span>, { status: <span class="str">204</span> })
+
+<span class="cmt">// 返回纯文本</span>
+<span class="kw">return new</span> <span class="fn">Response</span>(<span class="str">"hello"</span>)
+</pre>
+</div>
+
+<div class="callout">
+  <strong>状态码不是装饰。</strong>调用方（可能是另一个服务、也可能是手机 App）
+  完全依赖状态码来决定下一步：400 说明参数写错了、不要重试；
+  404 说明资源不在了；500 说明服务端出问题、可以稍后重试。
+  全都返回 200 再在 body 里写 <code>&#123; success: false &#125;</code> 是常见的
+  反面教材，会让所有调用方都难写。
+</div>
+
+<!-- ==================== 4 ==================== -->
+<h2>4. 缓存：这次默认值也变了</h2>
+
+<div class="callout danger">
+  <strong>Next.js 15 之前</strong>，<code>route.ts</code> 里的 GET 默认会被静态化——
+  也就是说你在构建时算出一个结果，之后所有人拿到的都是这一份。
+  对于「增删改查」的接口来说这显然不合理，所以
+  <strong>从 15 开始，GET 默认改为动态，不再缓存。</strong>
+</div>
+
+<p>如果你确实希望某个 GET 接口被缓存，可以显式声明：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// 明确要缓存，每 60 秒再生</span>
+<span class="kw">export const</span> revalidate = <span class="str">60</span>
+
+<span class="cmt">// 或者明确不缓存（现在这是默认值，写出来更清楚）</span>
+<span class="kw">export const</span> dynamic = <span class="str">"force-dynamic"</span>
+</pre>
+</div>
+
+<p>demo 里的接口都写了 <code>force-dynamic</code>，倒不是为了改变行为，
+而是让意图一目了然——一个会改数据的接口，读者一眼就该知道它不会被缓存。</p>
+
+<!-- ==================== 5 ==================== -->
+<h2>5. 什么时候该写接口</h2>
+
+<p>这一章最容易犯的错，是「明明不需要接口却写了一个」。对照一下：</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:38%;">场景</th><th>该用什么</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>自己的页面要展示数据</td>
+      <td>服务端组件直接取（第五章）——<strong>不要</strong>写接口</td>
+    </tr>
+    <tr>
+      <td>表单提交、按钮触发写操作</td>
+      <td>Server Actions（第十章）——通常比接口更省事</td>
+    </tr>
+    <tr>
+      <td>浏览器里的客户端组件要取数据</td>
+      <td>接口或 Server Actions 都行</td>
+    </tr>
+    <tr>
+      <td>外部系统要调用你的服务</td>
+      <td><strong>必须用 <code>route.ts</code></strong></td>
+    </tr>
+    <tr>
+      <td>接收 Webhook、提供公开 API</td>
+      <td><strong>必须用 <code>route.ts</code></strong></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout info">
+  <strong>一句话判断标准：调用方是不是「这个 Next.js 应用自己」？</strong>
+  <br />
+  是 → 优先考虑服务端组件或 Server Actions，少一层网络开销。
+  <br />
+  不是（外部服务、第三方、手机端）→ 那就得有 <code>route.ts</code>。
+</div>
+
+<!-- ==================== 6 ==================== -->
+<h2>6. 代码示例与 demo 对照</h2>
+
+<div class="callout info">
+  <strong>本章 demo 路径：</strong>
+  <ul style="margin:8px 0 0 20px;">
+    <li>接口说明页 → <code>demo/app/route-handlers/page.tsx</code></li>
+    <li>调用接口的客户端组件 → <code>demo/app/route-handlers/todo-client.tsx</code></li>
+    <li>集合接口（GET / POST）→ <code>demo/app/api/todos/route.ts</code></li>
+    <li>单条接口（GET / PUT / DELETE）→ <code>demo/app/api/todos/[id]/route.ts</code></li>
+    <li>内存数据 → <code>demo/app/api/todos/store.ts</code></li>
+  </ul>
+</div>
+
+<div class="callout">
+  <strong>动手验证：</strong>
+  <ol style="margin:8px 0 0 20px;">
+    <li>在浏览器里打开 <code>/api/todos</code>——地址栏发的是 GET，直接看到 JSON。</li>
+    <li>打开 <code>/route-handlers</code>，新建几条待办、勾选、删除，
+        注意页面上「最近一次请求」那一行的状态码。</li>
+    <li>在终端里试一个不合法请求，观察 400：
+      <br /><code>curl -i -X POST localhost:3000/api/todos -H "Content-Type: application/json" -d '{}'</code></li>
+  </ol>
+</div>
+
+<!-- ==================== 7 ==================== -->
+<h2>7. 小结</h2>
+
+<ul>
+  <li><code>route.ts</code> 用文件夹定位，导出以 HTTP 方法命名的函数。</li>
+  <li>同一个文件夹里 <code>route.ts</code> 和 <code>page.tsx</code> 不能共存。</li>
+  <li>动态参数 <code>params</code> 是 Promise，要 <code>await</code>。</li>
+  <li>用 <code>NextResponse.json()</code> 返回 JSON，用第二个参数指定状态码。</li>
+  <li><strong>Next.js 15 起 GET 默认不缓存</strong>（和 fetch 的变化同步）。</li>
+  <li>优先用服务端组件或 Server Actions；只有「外部调用方」才真的需要接口。</li>
+</ul>
+
+<p>下一章讲 Server Actions——它让你不用写接口，就能直接在表单里执行服务端逻辑。</p>
+
+<div class="nav-bottom">
+  <a href="../08-navigation/index.html">← 上一章：导航与路由感知</a>
+  <a href="../10-server-actions/index.html">下一章：Server Actions →</a>
+</div>
+
+</div>
+</body>
+</html>

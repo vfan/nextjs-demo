@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12 · 样式方案 — Next.js 教程</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #fff;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .container { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  nav { margin-bottom: 40px; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  nav span { color: #999; margin: 0 8px; }
+
+  h1 { font-size: 2.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px; }
+  .chap-label { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .intro { color: var(--text-secondary); font-size: 1.05rem; margin: 12px 0 40px; max-width: 660px; }
+
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 50px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 32px 0 10px; }
+
+  p { margin-bottom: 14px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; }
+
+  .code-block {
+    background: #1e1e1e; color: #d4d4d4; border-radius: 8px;
+    padding: 18px 22px; margin: 14px 0 18px; overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85rem; line-height: 1.7;
+  }
+  .code-block .kw { color: #569cd6; }
+  .code-block .fn { color: #dcdcaa; }
+  .code-block .str { color: #ce9178; }
+  .code-block .cmt { color: #6a9955; }
+  .code-block .tag { color: #4ec9b0; }
+  .code-block .hl { color: #ffd479; }
+
+  .illustration {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px 28px; margin: 22px 0; overflow-x: auto;
+  }
+  .illustration pre { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.85rem; line-height: 1.75; color: #333; }
+
+  .callout { background: #fff8e1; border-left: 3px solid #f0b400; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 20px 0; font-size: 0.93rem; }
+  .callout.info { background: #e8f4fd; border-left-color: var(--accent); }
+  .callout.danger { background: #fdecec; border-left-color: #e5484d; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 22px; font-size: 0.9rem; }
+  th { background: #f5f5f5; text-align: left; padding: 10px 12px; border: 1px solid var(--border); font-weight: 600; }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+
+  .nav-bottom { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; }
+  .nav-bottom a { color: var(--accent); text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav>
+  <a href="../index.html">教程首页</a><span>/</span>12 · 样式方案
+</nav>
+
+<div class="chap-label">第十二章</div>
+<h1>样式方案</h1>
+<p class="intro">
+  Next.js 对样式没有强制主张——CSS Modules、Tailwind、全局 CSS、
+  CSS-in-JS 都能用。这一章讲清楚每种方案的定位，以及两个具体问题：
+  <strong>全局样式为什么只能从根布局引入</strong>，
+  和<strong>条件类名该怎么拼</strong>。
+</p>
+
+<div class="callout info" style="margin-bottom:32px;">
+  <strong>配套可运行代码：</strong>本章在 demo 的 <code>/styling</code> 路由下。
+  执行 <code>npm install &amp;&amp; npm run dev</code> 后访问
+  <code>http://localhost:3000/styling</code>。
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2>1. 四种方案</h2>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:20%;">方案</th><th style="width:16%;">作用域</th><th>适合</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>全局 CSS</strong></td>
+      <td>全站</td>
+      <td>主题变量、基础排版、重置样式</td>
+    </tr>
+    <tr>
+      <td><strong>CSS Modules</strong></td>
+      <td>单个文件</td>
+      <td>组件样式。需要写真实 CSS（伪类、动画、媒体查询）时</td>
+    </tr>
+    <tr>
+      <td><strong>Tailwind CSS</strong></td>
+      <td>全站（原子类）</td>
+      <td>快速迭代、团队统一设计规范</td>
+    </tr>
+    <tr>
+      <td><strong>CSS-in-JS</strong></td>
+      <td>组件</td>
+      <td>已有技术积累的团队。在 App Router 里需要额外配置</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+  <strong>本 demo 只用了前两种。</strong>
+  不是因为另外两种不好，而是这个教程想让读者分清楚
+  「哪些是 Next.js 的规则、哪些是某个库的用法」。
+  Tailwind 的类名会把这两件事搅在一起，所以没有引入。
+  <br /><br />
+  但你在真实项目里完全可以自由选择——本章最后一节说 Tailwind 怎么接入。
+</div>
+
+<!-- ==================== 2 ==================== -->
+<h2>2. 全局 CSS：只能从根布局引入</h2>
+
+<div class="callout danger">
+  <strong>这是一条容易困惑的规则：全局 CSS 只能在{" "}
+  <code>app/layout.tsx</code> 里引入。</strong>
+  <br /><br />
+  在别的文件里 <code>import &quot;./styles.css&quot;</code> 会报错。
+  原因很实际：Next.js 需要在渲染开始之前就知道全部全局样式，
+  才能在 HTML 的 <code>&lt;head&gt;</code> 里按正确的顺序插入它们。
+  如果允许任何组件随时引入，样式顺序就变得不可预测了。
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/layout.tsx —— 全局样式只能在这里引入</span>
+<span class="hl">import "./globals.css"</span>
+
+<span class="kw">export default function</span> <span class="fn">RootLayout</span>({ children }: { children: React.ReactNode }) {
+  <span class="kw">return</span> (
+    <span class="tag">&lt;html</span> <span class="fn">lang</span>=<span class="str">"zh-CN"</span><span class="tag">&gt;</span>
+      <span class="tag">&lt;body&gt;</span>{children}<span class="tag">&lt;/body&gt;</span>
+    <span class="tag">&lt;/html&gt;</span>
+  )
+}
+</pre>
+</div>
+
+<h3>全局 CSS 里放什么</h3>
+
+<div class="code-block">
+<pre>
+<span class="cmt">/* app/globals.css */</span>
+<span class="hl">:root</span> {
+  --accent: #0070f3;      <span class="cmt">/* 主题变量，全站复用 */</span>
+  --border: #e5e5e5;
+}
+
+<span class="cmt">/* 基础排版 */</span>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.7;
+}
+
+<span class="cmt">/* 少量通用类。本 demo 的 .card / .note 就定义在这里 */</span>
+<span class="hl">.card</span> {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+</pre>
+</div>
+
+<p>注意 <code>:root</code> 里的 CSS 变量——这是全局 CSS 最有价值的用法之一。
+用 <code>var(--accent)</code> 引用主题色，改一处就能全站生效。</p>
+
+<div class="callout">
+  <strong>不要把组件样式都塞进全局 CSS。</strong>
+  全局类名没有作用域，两个开发者很容易起出同名的 <code>.card</code>，
+  后定义的那个会静默地覆盖前一个。全局 CSS 里只该放
+  「全站通用的东西」：变量、重置、排版、极少数工具类。
+</div>
+
+<!-- ==================== 3 ==================== -->
+<h2>3. CSS Modules：局部作用域</h2>
+
+<p>文件名以 <code>.module.css</code> 结尾，就自动变成局部作用域：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">/* app/styling/css-modules/card.module.css */</span>
+<span class="hl">.card</span> {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+}
+<span class="hl">.highlight</span> {
+  border-color: #0070f3;
+  box-shadow: 0 0 0 3px #eaf3ff;
+}
+</pre>
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/styling/css-modules/page.tsx</span>
+<span class="hl">import styles from "./card.module.css"</span>   <span class="cmt">// 当成对象导入</span>
+
+<span class="kw">export default function</span> <span class="fn">Page</span>() {
+  <span class="kw">return</span> (
+    <span class="tag">&lt;div</span> <span class="fn">className</span>={styles.card}<span class="tag">&gt;</span>普通卡片<span class="tag">&lt;/div&gt;</span>
+  )
+}
+</pre>
+</div>
+
+<p>它到底做了什么？<strong>把类名改了。</strong>
+构建后 <code>.card</code> 会变成类似 <code>.card_a1b2c3</code> 的名字，
+所以这里的 <code>.card</code> 和别处的 <code>.card</code> 永远不会冲突。</p>
+
+<div class="callout info">
+  <strong>怎么亲眼看到？</strong>打开 demo 的{" "}
+  <code>/styling/css-modules</code>，用开发者工具的 Elements 面板看那些 div
+  的 <code>class</code> 属性——你会看到带随机后缀的名字。
+  <br /><br />
+  好处随之而来：你不需要再发明 BEM 那种
+  <code>.block__element--modifier</code> 的长命名来避免冲突了。
+</div>
+
+<h3>CSS Modules 不做的事</h3>
+
+<p>它只解决<strong>作用域隔离</strong>，不解决<strong>样式复用</strong>。
+想在多个模块之间共享值，用 CSS 变量：</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">/* globals.css 定义一次 */</span>
+:root { --accent: #0070f3; }
+
+<span class="cmt">/* 任何模块里都能用 */</span>
+.button { background: var(--accent); }
+.link   { color: var(--accent); }
+</pre>
+</div>
+
+<!-- ==================== 4 ==================== -->
+<h2>4. Tailwind CSS 的取舍</h2>
+
+<p>接入很简单——创建项目时 <code>create-next-app</code> 会问你要不要用。
+用起来是这样：</p>
+
+<div class="code-block">
+<pre>
+<span class="tag">&lt;div</span> <span class="fn">className</span>=<span class="str">"rounded-lg border border-gray-200 bg-white p-5"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;h3</span> <span class="fn">className</span>=<span class="str">"text-lg font-semibold"</span><span class="tag">&gt;</span>卡片标题<span class="tag">&lt;/h3&gt;</span>
+<span class="tag">&lt;/div&gt;</span>
+</pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr><th style="width:50%;">好处</th><th>代价</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>不用想类名，写的时候不用在文件和 CSS 之间来回跳</td>
+      <td>JSX 变得很长，复杂组件里结构不清晰</td>
+    </tr>
+    <tr>
+      <td>自带设计约束（间距、字号都是固定的一档一档）</td>
+      <td>需要花时间记类名，否则要一直查文档</td>
+    </tr>
+    <tr>
+      <td>不会产生「没用的 CSS 越积越多」</td>
+      <td>代码审查时很难一眼看出样式改了什么</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+  <strong>一个常见的误解：</strong>「Tailwind 会把样式写在 HTML 里，所以体积大」。
+  恰恰相反——Tailwind 只输出你<strong>实际用到</strong>的类，
+  最终 CSS 通常比手写的小。真正的问题是可读性，不是体积。
+</div>
+
+<!-- ==================== 5 ==================== -->
+<h2>5. 条件类名：三种写法</h2>
+
+<p>「加载中橙色、成功绿色」这类需求，本质是「根据状态拼出一个字符串」。</p>
+
+<h3>① 模板字符串</h3>
+
+<div class="code-block">
+<pre>
+<span class="kw">const</span> className = <span class="str">`${styles.badge} ${styles[status]}`</span>
+</pre>
+</div>
+
+<p>简单直接。但类名一多就难读，而且没法优雅地处理「可选类名」。</p>
+
+<h3>② 数组 + filter + join（不加库时最实用）</h3>
+
+<div class="code-block">
+<pre>
+<span class="kw">const</span> className = [
+  styles.badge,
+  styles[status],
+  isActive &amp;&amp; styles.active,   <span class="cmt">// 条件为假时这里是 false</span>
+]
+  .<span class="fn">filter</span>(Boolean)             <span class="cmt">// 把 false 剔掉</span>
+  .<span class="fn">join</span>(<span class="str">" "</span>)
+</pre>
+</div>
+
+<h3>③ 用 clsx 之类的库</h3>
+
+<div class="code-block">
+<pre>
+<span class="kw">import</span> clsx <span class="kw">from</span> <span class="str">"clsx"</span>
+
+<span class="kw">const</span> className = <span class="fn">clsx</span>(styles.badge, styles[status], {
+  [styles.active]: isActive,
+})
+</pre>
+</div>
+
+<div class="callout danger">
+  <strong>别直接拼 <code>&amp;&amp;</code>。</strong>
+  <code className="path">`badge ${isActive &amp;&amp; &quot;active&quot;}`</code>{" "}
+  在条件为假时会拼出字面量 <code>"false"</code>，变成{" "}
+  <code>class="badge false"</code>。多数情况下不影响显示，
+  但很脏，也容易掩盖真正的 bug。
+</div>
+
+<!-- ==================== 6 ==================== -->
+<h2>6. 内联 style 该不该用</h2>
+
+<p>React 的 <code>style=&#123;&#123;...&#125;&#125;</code> 在 Next.js 里当然能用，
+本 demo 的不少页面就用了它。但要清楚它的边界：</p>
+
+<ul>
+  <li><strong>能用</strong>：一次性的微调、需要根据计算动态决定的值
+      （比如进度条宽度）、写文档 demo 时不想引入 CSS 文件。</li>
+  <li><strong>不该用</strong>：伪类（<code>:hover</code>）、媒体查询、
+      动画——内联样式根本表达不了这些。</li>
+  <li><strong>性能</strong>：内联样式会在每次渲染时创建新对象，
+      在频繁重渲染的大列表里不如类名。</li>
+</ul>
+
+<!-- ==================== 7 ==================== -->
+<h2>7. 代码示例与 demo 对照</h2>
+
+<div class="callout info">
+  <strong>本章 demo 路由：</strong><code>/styling</code>
+  <ul style="margin:8px 0 0 20px;">
+    <li>全局样式 → <code>demo/app/globals.css</code>（由 <code>demo/app/layout.tsx</code> 引入）</li>
+    <li>CSS Modules 样式 → <code>demo/app/styling/css-modules/card.module.css</code></li>
+    <li>CSS Modules 用法 → <code>demo/app/styling/css-modules/page.tsx</code></li>
+    <li>条件类名演示 → <code>demo/app/styling/conditional/status-demo.tsx</code></li>
+  </ul>
+</div>
+
+<div class="callout">
+  <strong>动手验证：</strong>
+  <ol style="margin:8px 0 0 20px;">
+    <li>打开 <code>/styling/css-modules</code>，用 Elements 面板看那两个卡片的
+        <code>class</code> 属性，确认类名被加了哈希后缀。</li>
+    <li>打开 <code>/styling/conditional</code>，切换三个状态看颜色变化；
+        切到「已完成」时第二个徽章会多出蓝色描边（那是可选类名生效了）。</li>
+    <li>试着在 <code>demo/app/styling/page.tsx</code> 里{" "}
+        <code>import &quot;./globals.css&quot;</code>，然后构建，看报错信息。</li>
+  </ol>
+</div>
+
+<!-- ==================== 8 ==================== -->
+<h2>8. 小结</h2>
+
+<ul>
+  <li>四种方案：全局 CSS、CSS Modules、Tailwind、CSS-in-JS，
+      <strong>选一到两种并保持一致</strong>。</li>
+  <li>全局 CSS <strong>只能在根布局引入</strong>，里面主要放变量、重置和少量工具类。</li>
+  <li>CSS Modules 用 <code>.module.css</code> 命名，自动做作用域隔离，不解决复用。</li>
+  <li>跨模块共享值用 CSS 变量（<code>var(--x)</code>）。</li>
+  <li>条件类名推荐「数组 + filter + join」，别直接拼 <code>&amp;&amp;</code>。</li>
+  <li>内联 style 表达不了伪类、媒体查询和动画，只适合一次性微调。</li>
+</ul>
+
+<p>下一章讲图片和字体的优化——这两个直接影响首屏体验。</p>
+
+<div class="nav-bottom">
+  <a href="../11-metadata-seo/index.html">← 上一章：SEO 与元数据</a>
+  <a href="../13-images-and-fonts/index.html">下一章：图片与字体优化 →</a>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 · 路由基础 — Next.js 教程</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #fff;
+    --text: #1a1a1a;
+    --text-secondary: #555;
+    --border: #e0e0e0;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .container { max-width: 860px; margin: 0 auto; padding: 56px 20px 80px; }
+
+  nav { margin-bottom: 40px; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 0.95rem; }
+  nav span { color: #999; margin: 0 8px; }
+
+  h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.4px; }
+  .chap-label { font-size: 0.85rem; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .intro { color: var(--text-secondary); font-size: 1.05rem; margin: 12px 0 40px; max-width: 640px; }
+
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 48px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.12rem; font-weight: 600; margin: 32px 0 10px; }
+
+  p { margin-bottom: 14px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  strong { color: #111; }
+  code { background: #f0f0f0; padding: 1px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace; }
+  em { color: var(--text-secondary); }
+
+  .illustration {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 30px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .illustration pre {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: #333;
+  }
+  .illustration .tree { color: #555; }
+  .illustration .arrow { color: #999; }
+
+  .code-block {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 16px 0 22px;
+    overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+  .code-block .kw { color: #569cd6; }
+  .code-block .fn { color: #dcdcaa; }
+  .code-block .str { color: #ce9178; }
+  .code-block .cmt { color: #6a9955; }
+  .code-block .tag { color: #4ec9b0; }
+  .code-block .pun { color: #ccc; }
+
+  .callout {
+    background: #fff8e1; border-left: 3px solid #f0b400;
+    padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 20px 0;
+    font-size: 0.93rem;
+  }
+  .callout.info { background: #e8f4fd; border-left-color: var(--accent); }
+
+  .nav-bottom { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; }
+  .nav-bottom a { color: var(--accent); text-decoration: none; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav>
+  <a href="../index.html">教程首页</a><span>/</span>02 · 路由基础
+</nav>
+
+<div class="chap-label">第二章</div>
+<h1>路由基础</h1>
+<p class="intro">
+  Next.js 的路由系统不依赖任何配置文件——它直接读取你写在 <code>app/</code> 目录下的文件夹结构来生成 URL。
+  这是一种「约定大于配置」的设计：文件夹 = 路由段，<code>page.tsx</code> = 页面入口。
+</p>
+
+<div class="callout info" style="margin-bottom:32px;">
+  <strong>配套可运行代码：</strong>本章所有示例都在仓库的 <code>demo/</code> 项目里，
+  对应的路由是 <code>/routing-basics</code> 及其子页面。
+  进入 <code>demo/</code> 执行 <code>npm install &amp;&amp; npm run dev</code>，
+  再打开 <code>http://localhost:3000/routing-basics</code> 就能逐个点开验证。
+  各页面的详细说明见 <code>demo/README.md</code>。
+</div>
+
+<!-- ==================== 1 ==================== -->
+<h2>1. 核心规则：一个文件夹就是一个路由</h2>
+
+<p>在 Next.js App Router 中，路由规则非常简单：</p>
+
+<div class="illustration">
+<pre>
+<span class="tree">app/
+├── page.tsx</span>              →  <span class="arrow">/</span>
+<span class="tree">├── about/
+│   └── page.tsx</span>          →  <span class="arrow">/about</span>
+<span class="tree">├── blog/
+│   └── page.tsx</span>          →  <span class="arrow">/blog</span>
+<span class="tree">└── blog/
+    └── first-post/
+        └── page.tsx</span>      →  <span class="arrow">/blog/first-post</span>
+</pre>
+</div>
+
+<p>每一个<strong>文件夹</strong>代表一个 URL 段（route segment），每一层嵌套对应 URL 中的一级路径。直到某个文件夹里有 <code>page.tsx</code> 文件，这条路径才算真正「有页面」。</p>
+
+<div class="callout info">
+  <strong>关键点：</strong>没有 <code>page.tsx</code> 的文件夹对外不可访问。比如 <code>app/components/</code> 里即使放了文件，
+  因为没有 <code>page.tsx</code>，浏览器访问 <code>/components</code> 会返回 404。这让你可以把组件、工具函数安心放在 <code>app/</code> 下面。
+</div>
+
+<!-- ==================== 2 ==================== -->
+<h2>2. page.tsx：唯一的页面入口</h2>
+
+<p><code>page.tsx</code> 是一个特殊的保留文件名。它默认导出一个 React 组件，这个组件就代表该路由的完整页面。</p>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// app/about/page.tsx</span>
+<span class="kw">export default function</span> <span class="fn">AboutPage</span>() {
+  <span class="kw">return</span> (
+    <span class="tag">&lt;main&gt;</span>
+      <span class="tag">&lt;h1&gt;</span>关于我们<span class="tag">&lt;/h1&gt;</span>
+      <span class="tag">&lt;p&gt;</span>这是 /about 路由的页面内容。<span class="tag">&lt;/p&gt;</span>
+    <span class="tag">&lt;/main&gt;</span>
+  )
+}
+</pre>
+</div>
+
+<p>上面这个文件放在 <code>app/about/</code> 目录下，Next.js 会自动让它响应 <code>/about</code> 的请求。</p>
+
+<p>几个重要规则：</p>
+<ul>
+  <li><code>page.tsx</code> 必须是<strong>默认导出</strong>（<code>export default</code>），不能是命名导出。</li>
+  <li>一个路由段（文件夹）内<strong>只能有一个</strong> <code>page.tsx</code>。</li>
+  <li><code>page.tsx</code> 默认是<strong>服务端组件</strong>（Server Component），可以在函数体内直接写 <code>async</code> 获取数据。</li>
+</ul>
+
+<!-- ==================== 3 ==================== -->
+<h2>3. 路由与文件夹的完整映射</h2>
+
+<p>把上面两个规则合并，就能理解任意 URL 是怎么对到文件的：</p>
+
+<div class="illustration">
+<pre>
+<span class="tree">app/
+├── page.tsx                         →  /
+├── about/
+│   └── page.tsx                     →  /about
+├── products/
+│   ├── page.tsx                     →  /products
+│   ├── [id]/
+│   │   └── page.tsx                 →  /products/1, /products/abc ...
+│   └── categories/
+│       └── page.tsx                 →  /products/categories
+└── dashboard/
+    ├── layout.tsx
+    ├── page.tsx                     →  /dashboard
+    └── settings/
+        └── page.tsx                 →  /dashboard/settings</span>
+</pre>
+</div>
+
+<p>URL 的每一段（用 <code>/</code> 分隔）都是文件系统的一个层级。这是一种<strong>零配置路由</strong>——不需要写 <code>routes.ts</code>，不需要注册路由表，新建文件夹就是新建路由。</p>
+
+<!-- ==================== 4 ==================== -->
+<h2>4. 理解「保留文件」</h2>
+
+<p>Next.js 在 <code>app/</code> 目录下定义了一组<strong>特殊文件名</strong>，各自承担不同的职责：</p>
+
+<table style="width:100%; border-collapse:collapse; margin:16px 0 22px; font-size:0.92rem;">
+  <thead>
+    <tr style="background:#f5f5f5; text-align:left;">
+      <th style="padding:10px 14px; border:1px solid var(--border);">文件名</th>
+      <th style="padding:10px 14px; border:1px solid var(--border);">作用</th>
+      <th style="padding:10px 14px; border:1px solid var(--border);">说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="padding:9px 14px; border:1px solid var(--border);"><code>page.tsx</code></td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">页面内容</td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">路由可访问的唯一入口</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="padding:9px 14px; border:1px solid var(--border);"><code>layout.tsx</code></td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">共享布局</td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">包裹子页面的外壳，切换路由时不销毁</td>
+    </tr>
+    <tr>
+      <td style="padding:9px 14px; border:1px solid var(--border);"><code>loading.tsx</code></td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">加载状态</td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">页面数据加载过程中显示的 UI</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="padding:9px 14px; border:1px solid var(--border);"><code>error.tsx</code></td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">错误边界</td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">捕获子组件渲染错误</td>
+    </tr>
+    <tr>
+      <td style="padding:9px 14px; border:1px solid var(--border);"><code>not-found.tsx</code></td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">404 页面</td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">该路由段下资源不存在时的 UI</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="padding:9px 14px; border:1px solid var(--border);"><code>route.ts</code></td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">API 端点</td>
+      <td style="padding:9px 14px; border:1px solid var(--border);">处理 HTTP 请求（GET/POST 等），不能与 page.tsx 共存</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>这些文件都跟路由相关，我们会陆续讲到。这一章的重点是：<strong>只要在你需要的文件夹里放一个 <code>page.tsx</code>，你就多了一个页面</strong>。</p>
+
+<!-- ==================== 5 ==================== -->
+<h2>5. 路由组：不影响 URL 的文件夹</h2>
+
+<p>如果想把几个相关页面归到一个文件夹里管理，但不希望这个文件夹出现在 URL 中，可以用<strong>路由组（Route Group）</strong>：把文件夹名用小括号包起来。</p>
+
+<div class="illustration">
+<pre>
+<span class="tree">app/
+├── (marketing)/
+│   ├── about/
+│   │   └── page.tsx</span>       →  <span class="arrow">/about</span> （注意：不是 /marketing/about）
+<span class="tree">│   └── contact/
+│       └── page.tsx</span>      →  <span class="arrow">/contact</span>
+<span class="tree">└── (shop)/
+    ├── products/
+    │   └── page.tsx</span>      →  <span class="arrow">/products</span>
+<span class="tree">    └── cart/
+        └── page.tsx</span>         →  <span class="arrow">/cart</span>
+</pre>
+</div>
+
+<p><code>(marketing)</code> 和 <code>(shop)</code> 纯粹是组织代码用的，<strong>对 URL 完全透明</strong>。你可以给不同的路由组配不同的 <code>layout.tsx</code>——这是它的最大价值（下一章会讲到）。</p>
+
+<!-- ==================== 6 ==================== -->
+<h2>6. 示例代码</h2>
+
+<p>以下是本章的代码示例，展示了最基本的页面创建方式。这些示例在 demo 项目里都有可运行版本：</p>
+
+<div class="callout info">
+  <strong>本章示例与 demo 文件的对应关系</strong>
+  <ul style="margin:8px 0 0 20px;">
+    <li><code>demo/app/routing-basics/page.tsx</code> → <code>/routing-basics</code></li>
+    <li><code>demo/app/routing-basics/about/page.tsx</code> → <code>/routing-basics/about</code></li>
+    <li><code>demo/app/routing-basics/blog/page.tsx</code> → <code>/routing-basics/blog</code></li>
+    <li><code>demo/app/routing-basics/blog/first-post/page.tsx</code> → <code>/routing-basics/blog/first-post</code></li>
+    <li><code>demo/app/routing-basics/(marketing)/pricing/page.tsx</code> → <code>/routing-basics/pricing</code></li>
+  </ul>
+  <p style="margin:10px 0 0;">
+    说明：demo 是「一个项目装下所有章节」的结构，所以比孤立示例多了一层
+    <code>routing-basics/</code> 前缀，用来把本章的代码归在一起。路由规则本身完全一样。
+    下面的代码片段是精简示意，完整版以上述文件为准。
+  </p>
+</div>
+
+<h3>示例 A：根路由 + 一级子路由</h3>
+<div class="code-block">
+<pre>
+<span class="cmt">// demo/app/routing-basics/page.tsx — 访问 /routing-basics</span>
+<span class="kw">export default function</span> <span class="fn">HomePage</span>() {
+  <span class="kw">return</span> <span class="tag">&lt;h1&gt;</span>欢迎来到我的网站<span class="tag">&lt;/h1&gt;</span>
+}
+</pre>
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// demo/app/routing-basics/about/page.tsx — 访问 /routing-basics/about</span>
+<span class="kw">export default function</span> <span class="fn">AboutPage</span>() {
+  <span class="kw">return</span> (
+    <span class="tag">&lt;article&gt;</span>
+      <span class="tag">&lt;h1&gt;</span>关于我们<span class="tag">&lt;/h1&gt;</span>
+      <span class="tag">&lt;p&gt;</span>这是一段公司介绍。<span class="tag">&lt;/p&gt;</span>
+    <span class="tag">&lt;/article&gt;</span>
+  )
+}
+</pre>
+</div>
+
+<h3>示例 B：二级嵌套路由</h3>
+<div class="code-block">
+<pre>
+<span class="cmt">// demo/app/routing-basics/blog/page.tsx — 访问 /routing-basics/blog</span>
+<span class="kw">import</span> Link <span class="kw">from</span> <span class="str">"next/link"</span>
+
+<span class="kw">export default function</span> <span class="fn">BlogIndex</span>() {
+  <span class="kw">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;h1&gt;</span>博客<span class="tag">&lt;/h1&gt;</span>
+      <span class="tag">&lt;Link</span> <span class="fn">href</span>=<span class="str">"/routing-basics/blog/first-post"</span><span class="tag">&gt;</span>我的第一篇博客<span class="tag">&lt;/Link&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  )
+}
+</pre>
+</div>
+
+<div class="code-block">
+<pre>
+<span class="cmt">// demo/app/routing-basics/blog/first-post/page.tsx — 访问 /routing-basics/blog/first-post</span>
+<span class="kw">export default function</span> <span class="fn">FirstPost</span>() {
+  <span class="kw">return</span> (
+    <span class="tag">&lt;article&gt;</span>
+      <span class="tag">&lt;h1&gt;</span>我的第一篇博客<span class="tag">&lt;/h1&gt;</span>
+      <span class="tag">&lt;time</span> <span class="fn">dateTime</span>=<span class="str">"2026-09-12"</span><span class="tag">&gt;</span>2026 年 9 月 12 日<span class="tag">&lt;/time&gt;</span>
+      <span class="tag">&lt;p&gt;</span>Hello, Next.js!<span class="tag">&lt;/p&gt;</span>
+    <span class="tag">&lt;/article&gt;</span>
+  )
+}
+</pre>
+</div>
+
+<h3>示例 C：路由组</h3>
+<div class="code-block">
+<pre>
+<span class="cmt">// demo/app/routing-basics/(marketing)/pricing/page.tsx — 访问 /routing-basics/pricing（注意没有 marketing）</span>
+<span class="kw">export default function</span> <span class="fn">PricingPage</span>() {
+  <span class="kw">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;h1&gt;</span>价格方案<span class="tag">&lt;/h1&gt;</span>
+      <span class="tag">&lt;ul&gt;</span>
+        <span class="tag">&lt;li&gt;</span>免费版 — ¥0/月<span class="tag">&lt;/li&gt;</span>
+        <span class="tag">&lt;li&gt;</span>专业版 — ¥99/月<span class="tag">&lt;/li&gt;</span>
+      <span class="tag">&lt;/ul&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  )
+}
+</pre>
+</div>
+
+<div class="callout">
+  <strong>动手验证：</strong>打开 <code>demo/</code>，在 <code>demo/app/routing-basics/</code> 下新建一个文件夹、
+  放进一个 <code>page.tsx</code>，然后访问对应 URL——你会看到零编译、零重启，页面直接生效
+  （这得益于 Turbopack 的热更新）。验证完删掉即可，不影响其它章节。
+</div>
+
+<!-- ==================== 导航 ==================== -->
+<div class="nav-bottom">
+  <a href="../01-rendering-strategies/index.html">← 上一章：渲染策略</a>
+  <a href="../03-layouts/index.html">下一章：布局系统 →</a>
+</div>
+
+</div>
+</body>
+</html>

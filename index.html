@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Next.js 教程（App Router）</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --card-bg: #ffffff;
+    --text: #1a1a1a;
+    --text-secondary: #666;
+    --border: #e5e5e5;
+    --accent: #0070f3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .container { max-width: 900px; margin: 0 auto; padding: 60px 20px; }
+  h1 { font-size: 2.4rem; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .subtitle { color: var(--text-secondary); font-size: 1.05rem; margin-bottom: 36px; max-width: 660px; }
+
+  .notice {
+    background: #eaf3ff; border-left: 3px solid var(--accent);
+    padding: 14px 18px; border-radius: 0 6px 6px 0;
+    margin-bottom: 40px; font-size: 0.92rem;
+  }
+  .notice code { background: #dbe9fb; padding: 1px 6px; border-radius: 4px; font-family: ui-monospace, Menlo, monospace; font-size: 0.88em; }
+
+  .chapters { display: flex; flex-direction: column; gap: 12px; }
+  .chapter { display: flex; align-items: flex-start; gap: 20px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 22px 26px; text-decoration: none; color: var(--text); transition: box-shadow 0.15s, border-color 0.15s; }
+  a.chapter:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-color: #ccc; }
+  .chapter-num { font-size: 1.4rem; font-weight: 700; color: var(--accent); min-width: 46px; }
+  .chapter-info h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+  .chapter-info p { font-size: 0.9rem; color: var(--text-secondary); }
+  .badge { display: inline-block; background: #f0f4ff; color: var(--accent); font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
+  .badge.first { background: #fff4e6; color: #c2410c; }
+  .route { font-family: ui-monospace, Menlo, monospace; font-size: 0.78rem; color: #999; display: block; margin-top: 4px; }
+
+  .outro {
+    margin-top: 40px; padding: 24px 26px; border-radius: 12px;
+    background: linear-gradient(135deg, #eaf3ff, #f6f9ff);
+    border: 1px solid #d6e6fb;
+  }
+  .outro h2 { font-size: 1.1rem; margin-bottom: 8px; }
+  .outro p { font-size: 0.92rem; color: #444; margin-bottom: 8px; }
+  .outro p:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>理解 Next.js</h1>
+  <p class="subtitle">
+    一套完整的 App Router 教程，共 14 章。每章聚焦一个知识点，
+    配一份图解式讲解；所有代码集中在同一个可运行的 demo 项目里。
+  </p>
+
+  <div class="notice">
+    <strong>配套代码：</strong>本教程所有示例都在 <code>demo/</code> 项目里。
+    进入该目录执行 <code>npm install &amp;&amp; npm run dev</code>，
+    再打开 <code>http://localhost:3000</code> 就能逐个点开看效果。
+    每个页面的详细说明见 <code>demo/README.md</code>。
+  </div>
+
+  <div class="chapters">
+
+    <a href="01-rendering-strategies/index.html" class="chapter">
+      <span class="chapter-num">01</span>
+      <div class="chapter-info">
+        <h2>渲染策略：CSR / SSR / SSG / ISR</h2>
+        <p>HTML 到底在哪里、什么时候生成？四种策略的对比与取舍</p>
+        <span class="badge first">建议从这里开始</span>
+        <span class="route">demo: /rendering-strategies</span>
+      </div>
+    </a>
+
+    <a href="02-routing-basics/index.html" class="chapter">
+      <span class="chapter-num">02</span>
+      <div class="chapter-info">
+        <h2>路由基础</h2>
+        <p>文件系统路由、page.tsx、文件夹即路由段、路由组</p>
+        <span class="route">demo: /routing-basics</span>
+      </div>
+    </a>
+
+    <a href="03-layouts/index.html" class="chapter">
+      <span class="chapter-num">03</span>
+      <div class="chapter-info">
+        <h2>布局系统</h2>
+        <p>layout.tsx、嵌套布局、布局持久化、template 的对比</p>
+        <span class="route">demo: /layouts</span>
+      </div>
+    </a>
+
+    <a href="04-server-client-components/index.html" class="chapter">
+      <span class="chapter-num">04</span>
+      <div class="chapter-info">
+        <h2>服务端组件 vs 客户端组件</h2>
+        <p>默认值是哪一边、"use client" 划的边界、如何组合与传参</p>
+        <span class="route">demo: /server-client</span>
+      </div>
+    </a>
+
+    <a href="05-data-fetching/index.html" class="chapter">
+      <span class="chapter-num">05</span>
+      <div class="chapter-info">
+        <h2>服务端数据获取</h2>
+        <p>直接 await 取数、三种缓存选项、串行与并行的差别</p>
+        <span class="route">demo: /data-fetching</span>
+      </div>
+    </a>
+
+    <a href="06-dynamic-routes/index.html" class="chapter">
+      <span class="chapter-num">06</span>
+      <div class="chapter-info">
+        <h2>动态路由</h2>
+        <p>[slug]、catch-all、generateStaticParams、params 是 Promise</p>
+        <span class="route">demo: /dynamic-routes</span>
+      </div>
+    </a>
+
+    <a href="07-loading-and-error/index.html" class="chapter">
+      <span class="chapter-num">07</span>
+      <div class="chapter-info">
+        <h2>加载状态与错误处理</h2>
+        <p>loading.tsx、error.tsx、not-found.tsx 三个约定文件</p>
+        <span class="route">demo: /loading-and-error</span>
+      </div>
+    </a>
+
+    <a href="08-navigation/index.html" class="chapter">
+      <span class="chapter-num">08</span>
+      <div class="chapter-info">
+        <h2>导航与路由感知</h2>
+        <p>Link、useRouter、usePathname、服务端 redirect()</p>
+        <span class="route">demo: /navigation</span>
+      </div>
+    </a>
+
+    <a href="09-route-handlers/index.html" class="chapter">
+      <span class="chapter-num">09</span>
+      <div class="chapter-info">
+        <h2>API 路由</h2>
+        <p>route.ts 的 GET / POST / PUT / DELETE，以及什么时候该用接口</p>
+        <span class="route">demo: /route-handlers</span>
+      </div>
+    </a>
+
+    <a href="10-server-actions/index.html" class="chapter">
+      <span class="chapter-num">10</span>
+      <div class="chapter-info">
+        <h2>Server Actions</h2>
+        <p>表单处理、useActionState、revalidatePath、安全边界</p>
+        <span class="route">demo: /server-actions</span>
+      </div>
+    </a>
+
+    <a href="11-metadata-seo/index.html" class="chapter">
+      <span class="chapter-num">11</span>
+      <div class="chapter-info">
+        <h2>SEO 与元数据</h2>
+        <p>metadata、generateMetadata、Open Graph、title 模板</p>
+        <span class="route">demo: /metadata</span>
+      </div>
+    </a>
+
+    <a href="12-styling/index.html" class="chapter">
+      <span class="chapter-num">12</span>
+      <div class="chapter-info">
+        <h2>样式方案</h2>
+        <p>全局 CSS、CSS Modules、Tailwind、条件类名的三种写法</p>
+        <span class="route">demo: /styling</span>
+      </div>
+    </a>
+
+    <a href="13-images-and-fonts/index.html" class="chapter">
+      <span class="chapter-num">13</span>
+      <div class="chapter-info">
+        <h2>图片与字体优化</h2>
+        <p>next/image 的四种用法、next/font 与国内网络环境的取舍</p>
+        <span class="route">demo: /images-fonts</span>
+      </div>
+    </a>
+
+    <a href="14-middleware/index.html" class="chapter">
+      <span class="chapter-num">14</span>
+      <div class="chapter-info">
+        <h2>中间件</h2>
+        <p>请求拦截、重定向、鉴权初筛、注入请求头</p>
+        <span class="badge">Next 16 起文件名叫 proxy.ts</span>
+        <span class="route">demo: /middleware</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="outro">
+    <h2>建议的学习顺序</h2>
+    <p>
+      按编号从头读。第一章的「渲染策略」是地基——它回答了
+      「HTML 到底什么时候生成」，后面所有关于数据、缓存、性能的话题都建立在它之上。
+    </p>
+    <p>
+      每章的建议流程是：读 HTML 讲解 → 打开 demo 里对应的路由动手验证 →
+      回到自己的项目里用一次。每章的讲解末尾都列出了 demo 的文件路径。
+    </p>
+    <p>
+      <strong>验证 SSG / ISR 时记得用 <code>npm run build &amp;&amp; npm start</code></strong>，
+      开发模式为了热更新会每次重新渲染，看不出静态缓存的效果。
+    </p>
+  </div>
+</div>
+</body>
+</html>

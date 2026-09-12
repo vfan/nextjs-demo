@@ -1,0 +1,35 @@
+/*
+ * 文件位置：app/styling/conditional/badge.module.css
+ *
+ * 每种状态一个类。这是在 CSS Modules 里处理「条件样式」的常见做法：
+ * 类名保持简单，用哪个由 JS 决定。
+ */
+
+.badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+
+.idle {
+  background: #f0f0f0;
+  color: #555;
+}
+
+.loading {
+  background: #fff4e6;
+  color: #c2410c;
+}
+
+.done {
+  background: #e7f8ee;
+  color: #157347;
+}
+
+.active {
+  outline: 2px solid #0070f3;
+  outline-offset: 2px;
+}

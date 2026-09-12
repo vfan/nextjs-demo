@@ -1,0 +1,40 @@
+/*
+ * CSS Module
+ * 文件位置：app/styling/css-modules/card.module.css
+ *
+ * 文件名必须以 .module.css 结尾，这是 Next.js 判断「这是局部样式」的依据。
+ *
+ * 里面写的类名会被自动加上一段哈希后缀，比如：
+ *   .card  →  .card_a1b2c3
+ *
+ * 所以这里的 .card 和别处的 .card 永远不会冲突，
+ * 你也不需要再发明 BEM 那种长长的命名。
+ */
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 14px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+/* 需要两个类一起用时，可以在模块里定义，也可以从外面拼 */
+.highlight {
+  border-color: #0070f3;
+  box-shadow: 0 0 0 3px #eaf3ff;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.meta {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  color: #6b6b6b;
+  margin: 0;
+}
